@@ -32,6 +32,10 @@ ES.panels = (function () {
   function metaOf(k) {
     return D.ATTRS.filter(function (x) { return x.k === k; })[0] || SPECIAL_META.filter(function (x) { return x.k === k; })[0] || null;
   }
+  /** 队内定位文案（替补 / 首发 / 顶替了谁） */
+  function selfRoleText() {
+    return ES.state.lineupText(S);
+  }
   function attrName(k) { const a = metaOf(k); return a ? a.name : k; }
   function attrIcon(k) { const a = metaOf(k); return a ? a.icon : "chart"; }
   function meterRow(label, icon, value, max, tone, note) {
@@ -345,6 +349,7 @@ ES.panels = (function () {
             '<div class="row-tight small"><span class="dim">性向 / 态度</span><span>' + U.esc(S.profile.orientation) + ' · ' + U.esc(S.profile.loveStyle || "—") + '</span></div>' +
             '<div class="row-tight small"><span class="dim">签名</span><span>' + (S.profile.sign ? U.esc(S.profile.sign) : "—") + '</span></div>' +
             '<div class="row-tight small"><span class="dim">本命特工</span><span>' + U.esc((S.agents && S.agents[0]) ? S.agents[0].name : "—") + '</span></div>' +
+            '<div class="row-tight small"><span class="dim">队内定位</span><span class="acc">' + U.esc(ES.state.lineupText(S)) + '</span></div>' +
             '<div class="row-tight small"><span class="dim">队伍羁绊</span><span>' + U.esc(bond.level.name) + ' · 团队战力 +' + Math.round(bond.level.bonus * 100) + '%（' + bond.value + '/100）</span></div>' +
           '</div>' +
           '<div class="hairline"></div>' +
@@ -960,20 +965,33 @@ ES.panels = (function () {
     }).join('') +
       '<div class="alert" data-tone="warn">' + U.icon('warn') + '<div>未达成的主线目标将影响赛季末的续约报价与教练信任。</div></div>';
 
+    const L = S.club && S.club.lineup;
     const selfRow = '<div class="lrow" data-self="1" style="border-color:var(--accent-40)">' +
       '<span class="lrow-ava" style="color:var(--accent);border-color:var(--accent-40)">' + U.esc(S.profile.name.slice(0, 1)) + '</span>' +
       '<span class="lrow-main"><span class="lrow-name">' + U.esc(S.profile.name) + '<span class="tag" data-tone="cyan" style="margin-left:6px">你</span>' +
       '<span class="tiny dim mono"> ' + U.esc(S.profile.tag) + '</span></span>' +
-      '<span class="lrow-sub">' + U.esc(ES.state.positionOf(S).name) + ' · 首发' + (S.club && S.club.selfInRoster ? ' · 名单内' : ' · 名单外（青训/试训）') + '</span></span>' +
+      '<span class="lrow-sub">' + U.esc(ES.state.positionOf(S).name) + ' · ' + U.esc(selfRoleText()) + '</span></span>' +
       '<span class="lrow-side"><span class="mono small">总评 ' + ES.state.ovr(S) + '</span></span></div>';
-    U.$('#contract-squad-list').innerHTML = selfRow + S.relations.filter(function (r) { return r.type === 'teammate' || r.type === 'bench' || r.type === 'coach'; }).map(function (r) {
+    const npcRow = function (r) {
       return '<button type="button" class="lrow" data-npc="' + r.id + '">' +
         '<span class="lrow-ava">' + U.esc(r.name.slice(0, 1)) + '</span>' +
         '<span class="lrow-main"><span class="lrow-name">' + U.esc(r.name) + '<span class="tiny dim mono">' + U.esc(r.tag) + '</span></span>' +
         '<span class="lrow-sub">' + U.esc(r.role) + ' · ' + U.esc(r.persona.slice(0, 22)) + '…</span></span>' +
         '<span class="lrow-side"><span class="mono small">好感 ' + Math.round(r.affection) + '</span>' +
         '<span class="mini-meter" data-tone="' + (r.affection >= 70 ? 'good' : r.affection < 35 ? 'bad' : 'cyan') + '"><i style="width:' + r.affection + '%"></i></span></span></button>';
-    }).join('');
+    };
+    const head = function (txt, note) { return '<div class="tv-sec" style="margin:10px 0 4px">' + txt + '<span class="cnt">' + U.esc(note || '') + '</span></div>'; };
+    const mates = S.relations.filter(function (r) { return r.type === 'teammate'; });
+    const benchL = S.relations.filter(function (r) { return r.type === 'bench'; });
+    const coaches = S.relations.filter(function (r) { return r.type === 'coach'; });
+    const isBenchMe = !!(L && L.selfStatus === 'bench');
+    U.$('#contract-squad-list').innerHTML =
+      head(U.icon('users', 'icon-xs') + '首发五人', (L ? L.current.length + ' 人' : '') + (isBenchMe ? ' · 你在替补席' : ' · 你已在首发')) +
+      (isBenchMe ? '' : selfRow) +
+      mates.map(npcRow).join('') +
+      (isBenchMe ? head(U.icon('hourglass', 'icon-xs') + '你在替补席', '争取首发后方可登场') + selfRow : '') +
+      (benchL.length ? head(U.icon('hourglass', 'icon-xs') + '替补席 / 轮换', benchL.length + ' 人') + benchL.map(npcRow).join('') : '') +
+      (coaches.length ? head(U.icon('briefcase', 'icon-xs') + '教练组', coaches.length + ' 人') + coaches.map(npcRow).join('') : '');
 
     U.$('#contract-market-list').innerHTML = D.CLUBS.filter(function (o) { return o.id !== c.id; }).slice(0, 7).map(function (o, i) {
       const interest = U.clamp(Math.round(ES.state.ovr(S) * 0.85 + (30 - i * 3)), 10, 99);

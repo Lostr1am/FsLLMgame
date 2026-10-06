@@ -294,8 +294,16 @@ ES.state = (function () {
     const rosterAll = (def.rosters && def.rosters[ry]) ? def.rosters[ry].slice() : (def.roster || []).slice();
     const year = (tl && tl.year) || 2024;
     const rosterNote = (tl && tl.year <= 2023) ? year + ' · 建队期（以 2024 年阵容为基准）'
-      : (tl && tl.year >= 2027) ? year + ' · 演绎扩展（以 2026 年阵容为基准）'
+      : (tl && tl.year >= 2027) ? year + ' 演绎扩展（以 2026 年阵容为基准）'
         : year + ' 赛季基准（' + ry + ' 年阵容）';
+    /* 队内定位：名单里含玩家本人 → 首发；否则自创角色从替补做起，现实五人保持完整 */
+    const selfName = setup.name || '你';
+    const myTag = String(setup.tag || '').toLowerCase();
+    const selfInRoster = rosterAll.some(function (nm) { return String(nm).toLowerCase() === myTag; });
+    const baseline = rosterAll.slice(0, 5);
+    const lineup = selfInRoster
+      ? { baseline: baseline.slice(), current: baseline.slice(), benchNames: rosterAll.slice(5), selfStatus: 'starter', selfInRoster: true, replaced: null, selfName: selfName }
+      : { baseline: baseline.slice(), current: baseline.slice(), benchNames: rosterAll.slice(5), selfStatus: 'bench', selfInRoster: false, replaced: null, selfName: selfName };
     const ovrGuess = attrs ? Math.round((attrs.aim + attrs.reaction + attrs.gameSense + attrs.mentality + attrs.comms) / 5) : 60;
     const baseByLevel = ovrGuess >= 90 ? 2000000 : ovrGuess >= 80 ? 300000 : ovrGuess >= 70 ? 50000 : ovrGuess >= 60 ? 20000 : 5000;
     const tierMul = { T0: 1.5, T1: 1.0, T2: 0.7 }[def.tier] || 1.0;
@@ -304,6 +312,7 @@ ES.state = (function () {
     return {
       id: def.id, name: def.name, short: def.short, region: def.region, city: def.city, tier: def.tier,
       seat: def.seat, style: def.style, roster: rosterAll, rosters: def.rosters || {}, rosterYear: ry, rosterNote: rosterNote,
+      lineup: lineup,
       honors: def.honors, line: def.line,
       fansLabel: def.fans, env: def.env,
       league: 'VCT ' + (def.region === 'CN' ? 'CN' : def.region) + ' 联赛',
@@ -325,10 +334,16 @@ ES.state = (function () {
     const rel = [];
     let idx = 0;
     function add(o) {
-      rel.push({
+      const r = {
         id: 'npc-' + (++idx), name: o.name, tag: o.tag, role: o.role, type: o.type, persona: o.persona,
         affection: o.affection, trust: o.trust, events: [], callable: o.callable !== false
-      });
+      };
+      /* 业务字段透传（白名单此前把它们丢了） */
+      if (o.positionId) r.positionId = o.positionId;
+      if (o.fromRoster !== undefined) r.fromRoster = o.fromRoster;
+      if (o.starter !== undefined) r.starter = o.starter;
+      if (o.kind) r.kind = o.kind;
+      rel.push(r);
     }
     const coach = U.pick(D.NPCS.coach);
     add(Object.assign({}, coach, { role: '主教练', type: 'coach', affection: U.clamp(state.special.coachTrust, 5, 95), trust: U.clamp(state.special.coachTrust + 6, 5, 95) }));
@@ -341,57 +356,83 @@ ES.state = (function () {
     add(Object.assign({}, U.pick(D.NPCS.rival), { role: '宿敌 · 同位置', type: 'rival', affection: U.randInt(8, 24), trust: U.randInt(5, 20) }));
     add(Object.assign({}, U.pick(D.NPCS.media), { role: '电竞记者', type: 'media', affection: U.randInt(28, 46), trust: U.randInt(25, 45) }));
 
-    /* 队友：按所选俱乐部「该时间线年份」的阵容建档（附录 Q.6）；
-       自己若在名单中则不重复出现，其余补齐到 4 人，多余名单成员作为「轮换」保留 */
-    const rawRoster = (state.club && state.club.roster) ? state.club.roster.slice() : [];
-    const myTag = String(state.profile.tag || '').toLowerCase();
-    const selfIdx = rawRoster.findIndex(function (nm) { return String(nm || '').toLowerCase() === myTag; });
-    const selfInRoster = selfIdx >= 0;
-    if (state.club) state.club.selfInRoster = selfInRoster;
-    if (selfInRoster) rawRoster.splice(selfIdx, 1);
+    /* 队友与替补：按 lineup 生成 —— 替补身份时现实首发五人完整在位；
+       首发身份时玩家占据一个位置，被顶替者转入替补席（可自选顶替谁） */
+    const L = state.club ? state.club.lineup : null;
+    const myName = (state.profile && state.profile.name) || '你';
     const order = D.POSITIONS.concat([D.POSITIONS[1]]);
-    const starters = rawRoster.slice(0, 4);
-    const rotators = rawRoster.slice(4, 6);
-    const used = {};
     const clubLabel = (state.club ? state.club.short : '俱乐部') + ' ' + (state.club && state.club.rosterNote ? state.club.rosterNote : '阵容');
-    starters.forEach(function (nm, i) {
-      const p = order[i % order.length];
-      used[String(nm).toLowerCase()] = 1;
-      add({
-        name: nm, tag: nm.slice(0, 7), role: '队友 · ' + p.name, positionId: p.id, type: 'teammate',
-        persona: '现实选手（' + clubLabel + '）：' + p.name + '位，按公开赛场形象设定；描写以其比赛 ID 与赛场表现为限，不涉及私生活与未公开信息。',
-        affection: U.clamp(state.special.teammateTrust + U.randInt(-10, 12), 10, 92),
-        trust: U.clamp(state.special.teammateTrust + U.randInt(-6, 14), 10, 92)
+    const used = {};
+    const myTagLC = String((state.profile && state.profile.tag) || '').toLowerCase();
+    const isSelf = function (nm) {
+      const s = String(nm);
+      return s === String(myName) || (!!myTagLC && s.toLowerCase() === myTagLC);
+    };
+    if (L) {
+      /* 首发（可能含玩家）：替补身份看 5 名现实首发，首发身份则是其余 4 人 */
+      const mateNames = L.current.filter(function (nm) { return !isSelf(nm); });
+      const slots = L.selfStatus === 'bench' ? 5 : 4;
+      mateNames.slice(0, slots).forEach(function (nm, i) {
+        const p = order[i % order.length];
+        used[String(nm).toLowerCase()] = 1;
+        add({
+          name: nm, tag: String(nm).slice(0, 7), role: '队友 · ' + p.name, positionId: p.id, type: 'teammate',
+          fromRoster: true, starter: true,
+          persona: '现实选手（' + clubLabel + '）：' + p.name + '位首发，按公开赛场形象设定；描写以其比赛 ID 与赛场表现为限，不涉及私生活与未公开信息。',
+          affection: U.clamp(state.special.teammateTrust + U.randInt(-10, 12), 10, 92),
+          trust: U.clamp(state.special.teammateTrust + U.randInt(-6, 14), 10, 92)
+        });
       });
-    });
-    /* 名单不足 4 人（或未选俱乐部）时，用虚构队友补齐，保证首发恒为 5 人 */
-    if (starters.length < 4) {
-      const pool = D.TEAMMATE_POOL.filter(function (m) {
-        return m.role.indexOf('替补') < 0 && !used[String(m.name).toLowerCase()];
+      /* 替补席：被顶替者优先，其余为名单中未首发者 */
+      const benchList = [];
+      if (L.replaced) benchList.push(L.replaced);
+      (L.benchNames || []).forEach(function (nm) { if (benchList.indexOf(nm) < 0) benchList.push(nm); });
+      benchList.slice(0, 3).forEach(function (nm, i) {
+        const p = order[(4 + i) % order.length];
+        used[String(nm).toLowerCase()] = 1;
+        const replacedByMe = L.replaced === nm;
+        add({
+          name: nm, tag: String(nm).slice(0, 7), role: (replacedByMe ? '替补（被你顶替） · ' : '替补 · ') + p.name,
+          positionId: p.id, type: 'bench', fromRoster: true,
+          persona: replacedByMe
+            ? '现实选手（' + clubLabel + '）：' + p.name + '位，首发位置被你顶替后转入替补席。关系数值会随剧情变化。'
+            : '现实选手（' + clubLabel + '）：' + p.name + '位替补/轮换，随赛季与大名单浮动。',
+          affection: U.clamp(state.special.teammateTrust - (replacedByMe ? 18 : 6) + U.randInt(-8, 10), 5, 88),
+          trust: U.clamp(state.special.teammateTrust - (replacedByMe ? 14 : 8) + U.randInt(-6, 12), 5, 86)
+        });
       });
-      U.pickMany(pool, 4 - starters.length).forEach(function (m) {
+      /* 替补身份时，补一名虚构队内竞争者，形成「抢位置」的压力 */
+      if (L.selfStatus === 'bench') {
+        const rival = D.TEAMMATE_POOL.filter(function (m) {
+          return m.role.indexOf('替补') === 0 && !used[String(m.name).toLowerCase()];
+        })[0];
+        if (rival) add(Object.assign({}, rival, { role: '队内竞争者', type: 'bench', affection: U.randInt(17, 36), trust: U.randInt(12, 32) }));
+      }
+      /* 名额不足时用虚构队友补齐（替补需 5 人，首发需 4 人） */
+      if (mateNames.length < slots) {
+        const pool = D.TEAMMATE_POOL.filter(function (m) {
+          return m.role.indexOf('替补') < 0 && !used[String(m.name).toLowerCase()];
+        });
+        U.pickMany(pool, slots - mateNames.length).forEach(function (m) {
+          const p = D.POSITIONS.filter(function (x) { return m.role.indexOf(x.name) >= 0; })[0] || D.POSITIONS[0];
+          add(Object.assign({}, m, {
+            role: '队友 · ' + m.role, positionId: p.id, type: 'teammate', fromRoster: false,
+            affection: U.clamp(state.special.teammateTrust + U.randInt(-12, 12), 10, 92),
+            trust: U.clamp(state.special.teammateTrust + U.randInt(-8, 14), 10, 92)
+          }));
+        });
+      }
+    } else {
+      /* 未选俱乐部：全部用虚构队友 */
+      const pool = D.TEAMMATE_POOL.filter(function (m) { return m.role.indexOf('替补') < 0; });
+      U.pickMany(pool, 4).forEach(function (m) {
         const p = D.POSITIONS.filter(function (x) { return m.role.indexOf(x.name) >= 0; })[0] || D.POSITIONS[0];
-        used[String(m.name).toLowerCase()] = 1;
         add(Object.assign({}, m, {
-          role: '队友 · ' + m.role, positionId: p.id, type: 'teammate',
+          role: '队友 · ' + m.role, positionId: p.id, type: 'teammate', fromRoster: false,
           affection: U.clamp(state.special.teammateTrust + U.randInt(-12, 12), 10, 92),
           trust: U.clamp(state.special.teammateTrust + U.randInt(-8, 14), 10, 92)
         }));
       });
-    }
-    /* 名单里的第 5、6 人：作为轮换保留，避免「名单上的人不见了」 */
-    if (rotators.length) {
-      rotators.forEach(function (nm, i) {
-        const p = order[(starters.length + i) % order.length];
-        add({
-          name: nm, tag: nm.slice(0, 7), role: '轮换 · ' + p.name, positionId: p.id, type: 'bench',
-          persona: '现实选手（' + clubLabel + '）：' + p.name + '位轮换/替补，随赛季与大名单浮动。',
-          affection: U.clamp(state.special.teammateTrust - 6 + U.randInt(-8, 10), 8, 88),
-          trust: U.clamp(state.special.teammateTrust - 8 + U.randInt(-6, 12), 8, 86)
-        });
-      });
-    } else {
-      /* 名单没有多余成员时，保留一名虚构队内竞争者 */
       const bench = D.TEAMMATE_POOL.filter(function (m) { return m.role.indexOf('替补') === 0; })[0];
       if (bench) add(Object.assign({}, bench, { role: '队内竞争者', type: 'bench', affection: U.randInt(17, 36), trust: U.randInt(12, 32) }));
     }
@@ -402,6 +443,74 @@ ES.state = (function () {
     return rel;
   }
 
+  /** 上首发：把你写进首发五人，顶替 selectedName（不传则顶替最弱的位置），并迁移队内关系 */
+  function promotePlayer(st, selectedName) {
+    if (!st || !st.club || !st.club.lineup) return null;
+    const L = st.club.lineup;
+    if (L.selfStatus === 'starter') return null;
+    const myName = (st.profile && st.profile.name) || '你';
+    const candidates = L.current.slice();
+    const target = (selectedName && candidates.indexOf(selectedName) >= 0) ? selectedName : candidates[candidates.length - 1];
+    const idx = L.current.indexOf(target);
+    if (idx < 0) return null;
+    L.current[idx] = myName;
+    L.selfStatus = 'starter';
+    L.replaced = target;
+    L.selfName = myName;
+    /* 关系迁移：顶替者转替补，其余现实首发保持队友，计数与首发口径一致 */
+    const myTagLC2 = String((st.profile && st.profile.tag) || '').toLowerCase();
+    const isMe = function (nm) { const s = String(nm); return s === myName || (!!myTagLC2 && s.toLowerCase() === myTagLC2); };
+    const mateNames = L.current.filter(function (nm) { return !isMe(nm); });
+    const benchNames = [];
+    if (target) benchNames.push(target);
+    (L.benchNames || []).forEach(function (nm) { if (benchNames.indexOf(nm) < 0) benchNames.push(nm); });
+    const order = D.POSITIONS.concat([D.POSITIONS[1]]);
+    const findRel = function (nm) { return st.relations.filter(function (r) { return r.name === nm; })[0]; };
+    st.relations.forEach(function (r) {
+      if (r.type !== 'teammate' && r.type !== 'bench') return;
+      const i = mateNames.indexOf(r.name);
+      if (i >= 0) {
+        r.type = 'teammate';
+        r.role = '队友 · ' + order[i % order.length].name;
+        r.starter = true;
+        return;
+      }
+      const j = benchNames.indexOf(r.name);
+      if (j >= 0) {
+        r.type = 'bench';
+        r.role = (r.name === target ? '替补（被你顶替） · ' : '替补 · ') + order[(4 + j) % order.length].name;
+        r.starter = false;
+        if (r.name === target) {
+          r.affection = U.clamp(r.affection - 18, 5, 88);
+          r.trust = U.clamp(r.trust - 14, 5, 86);
+          r.persona = String(r.persona || '').replace(/首发/, '首发位置被你顶替');
+        }
+      }
+    });
+    /* 首发人数补齐到 5 人 */
+    const haveMates = st.relations.filter(function (r) { return r.type === 'teammate'; }).length;
+    if (haveMates < 4) {
+      const used = {};
+      st.relations.forEach(function (r) { used[r.name] = 1; });
+      const pool = D.TEAMMATE_POOL.filter(function (m) { return !used[m.name] && m.role.indexOf('替补') < 0; });
+      U.pickMany(pool, Math.max(0, 4 - haveMates)).forEach(function (m) {
+        const p = D.POSITIONS.filter(function (x) { return m.role.indexOf(x.name) >= 0; })[0] || D.POSITIONS[0];
+        st.relations.push({
+          id: 'npc-' + Math.random().toString(36).slice(2, 8), name: m.name, tag: m.tag, role: '队友 · ' + p.name,
+          positionId: p.id, type: 'teammate', fromRoster: false, persona: m.persona, affection: 50, trust: 50, events: [], callable: true
+        });
+      });
+    }
+    return { target: target, starters: L.current.slice(), bench: benchNames.slice() };
+  }
+
+  /** 队内定位文案（供各面板复用） */
+  function lineupText(s) {
+    const L = s && s.club && s.club.lineup;
+    if (!L) return '无俱乐部';
+    if (L.selfStatus === 'starter') return L.replaced ? ('首发 · 顶替 ' + L.replaced) : '首发 · 名单内';
+    return '替补席（' + L.current.length + ' 人首发）· 需争取首发';
+  }
   /* ── 任务 ── */
   function makeQuests(state) {
     const q = [];
@@ -611,6 +720,7 @@ ES.state = (function () {
       s.club = Object.assign({}, s.club, {
         id: def.id, name: def.name, short: def.short, region: def.region, city: def.city, tier: def.tier,
         seat: def.seat, style: def.style, roster: rosterAll, rosters: def.rosters || {}, rosterYear: ry, rosterNote: rosterNote,
+      lineup: lineup,
       honors: def.honors, line: def.line,
         salary: Math.round(s.club.salary * (action === 'transfer_t0' ? 1.9 : 1.35)),
         buyout: Math.round(s.club.buyout * 1.4), signed: true, bond: 10,
@@ -905,6 +1015,7 @@ ES.state = (function () {
     PHASES: PHASES, phaseOf: phaseOf, create: create, migrate: migrate,
     seasonLabel: seasonLabel, seasonOfYear: seasonOfYear, rosterYearFor: rosterYearFor, buildTalent: buildTalent, positionOf: positionOf,
     apply: apply, effective: effective, train: train, statusMod: statusMod,
+    promotePlayer: promotePlayer, lineupText: lineupText,
     ovr: ovr, ovrDetail: ovrDetail, level: level, nextLevel: nextLevel, breakthroughRate: breakthroughRate,
     marketValue: marketValue, marketDetail: marketDetail, bondOf: bondOf, labelOf: labelOf,
     pa: pa, paLabel: paLabel, ovrGrade: ovrGrade, evaluation: evaluation, endingTitle: endingTitle,

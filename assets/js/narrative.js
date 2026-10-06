@@ -567,9 +567,30 @@ ES.narrative = (function () {
           }
           /* 职业战绩：某些选项直接产生比赛 */
           if (c.match) simulateQuickMatch(c.match);
+          /* 上首发：判定成功（非失败）才真正顶替，并迁移队内关系 */
+          const promoted = !!(c.promotionTarget && (!res || res.verdict === 'crit' || res.verdict === 'success' || res.verdict === 'narrow'));
+          if (promoted) {
+            const r = ES.state.promotePlayer(S, c.promotionTarget);
+            if (r) {
+              banner({ title: '首发名单变更', text: '你顶替了 ' + r.target + '，进入首发五人。对方转入替补席。', tone: 'gold', icon: 'medal', duration: 12000 });
+              U.toast({ tone: 'gold', icon: 'medal', title: '你上首发了', msg: '顶替 ' + r.target + ' · 首发：' + r.starters.join('、'), duration: 9000 });
+              ES.state.pushLog(S, 'club', '上首发：顶替 ' + r.target + '，当前首发 ' + r.starters.join('、'));
+              ES.audio.play('levelup');
+            }
+          }
           endTurn(c.days || current.days || 1);
           const next = c.next;
-          if (next === '__end__') { setGen('生涯终章', false); return finishCareer(); }
+          if (next === '__after_promotion__') {
+        const resume = current && current.resumeNode;
+        setGen(resume ? '继续剧情' : '待命', false);
+        return nextScene(resume || undefined);
+      }
+      const promo = /^__promotion(?:@(.+))?__$/.exec(String(next || ''));
+      if (promo) {
+        setGen('生成场景中', false);
+        return promotionScene(false, promo[1] || null);
+      }
+      if (next === '__end__') { setGen('生涯终章', false); return finishCareer(); }
           if (next === '__loop__') { setGen('待命', false); return nextScene(); }
           setGen('待命', false);
           return nextScene(next);
@@ -660,7 +681,68 @@ ES.narrative = (function () {
   }
 
   /* ══════════ 随机事件（无剧情节点时的推演） ══════════ */
+  /* ══════════ 上首发剧情（选项按当前首发动态生成） ══════════ */
+  function promotionReady() {
+    const L = S.club && S.club.lineup;
+    return !!(L && L.selfStatus === 'bench');
+  }
+  function promotionScene(forced, resumeNode) {
+    const L = S.club.lineup;
+    if (resumeNode !== undefined) { /* 由节点进入时记录后续落点 */ }
+    const order = D.POSITIONS;
+    const starterRels = S.relations.filter(function (r) { return r.type === 'teammate'; });
+    const nameOf = function (nm) { return nm; };
+    const lines = [
+      { t: 'narr', text: '训练赛结束，教练把战术板扣在桌上。首发五人今天的状态都不好，但名单明天就要提交。' },
+      { t: 'speak', role: 'coach', who: '主教练', text: '「名单不是刻在石头上的。你想上，就得有人下来——你自己说，你替谁？」' },
+      { t: 'sys', text: '<b>当前首发</b>：' + L.current.map(function (nm, i) {
+        const rel = starterRels.filter(function (r) { return r.name === nm; })[0];
+        return nm + '（' + (rel ? rel.role.replace('队友 · ', '') : order[i % order.length].name) + '）';
+      }).join('、') + '<br><b>你的定位</b>：替补席 · 需要一次「顶替」才能进首发（顶替后对方转入替补，关系会变化）' }
+    ];
+    const choices = L.current.map(function (nm, i) {
+      const rel = starterRels.filter(function (r) { return r.name === nm; })[0];
+      const pos = rel ? rel.role.replace('队友 · ', '') : order[i % order.length].name;
+      const aff = rel ? Math.round(rel.affection) : 50;
+      return {
+        label: '顶替 ' + nm + '（' + pos + '）',
+        desc: '与你的关系 ' + aff + ' · 顶替后对方转入替补席，好感与信任下降；你的战术地位将按其位置重塑。',
+        risk: aff >= 70 ? 'high' : 'normal',
+        check: { attr: 'comms', dc: 13, tag: '沟通（说服教练与队内）' },
+        promotionTarget: nm,
+        effects: {
+          special: { coachTrust: 10, standing: 14, teammateTrust: -4, fame: 4 },
+          res: { fans: 2, condition: -4 },
+          flags: { debut: true, promoted: true }
+        },
+        failEffects: { special: { coachTrust: -6, standing: -4, teammateTrust: -8 }, res: { condition: -6 } },
+        result: {
+          success: '你把训练赛的数据摆到教练面前，指出自己能在' + pos + '位提供的价值。教练沉默了几秒：「明天你上。」' + nm + ' 摘下耳机，没有说话。',
+          fail: '你话说得太急，教练皱了眉：「先把自己的失误处理干净。」名单没有变化，你回到替补席。'
+        },
+        next: '__after_promotion__'
+      };
+    });
+    choices.push({
+      label: '再等等，用训练赛表现说话',
+      desc: '安全路线：不立刻顶替任何人，继续积累教练信任与数据。',
+      risk: 'safe',
+      check: null,
+      effects: { special: { coachTrust: 6, teammateTrust: 6, standing: 2 }, res: { condition: 4 } },
+      result: { success: '「行，那就继续练。」教练把名单收回抽屉。你把护腕重新戴好。' },
+      next: null
+    });
+    const p = baseScene('争一个首发名额', '基地 · 战术室', lines, choices, 2);
+    current.resumeNode = resumeNode || null;
+    return p;
+  }
+
   function randomInterlude() {
+    /* 替补身份 + 教练信任达标 → 优先触发「争首发」剧情 */
+    if (promotionReady() && S.special.coachTrust >= 58 && S.stats.choices >= 6 && !S.flags.promotionOffered) {
+      S.flags.promotionOffered = true;
+      return promotionScene();
+    }
     const roll = U.rng();
     const phase = S.time.phaseId;
     if (roll < 0.16) return eventMedia();
@@ -820,7 +902,17 @@ ES.narrative = (function () {
     return best;
   }
 
+  /* 主动争取首发：直接进入上首发剧情（仅在替补身份下） */
+  function wantsPromotion(text) {
+    const s = String(text || '');
+    return promotionReady() && /(首发|上场|主力|顶替|名额|轮换|位置)/.test(s) && /(争取|要|抢|要求|顶|进|上)/.test(s);
+  }
+
   function freeAction(text) {
+    if (wantsPromotion(text)) {
+      ES.state.pushLog(S, 'action', '主动争取首发：' + text);
+      return promotionScene(true);
+    }
     if (busy || !text || !String(text).trim()) {
       if (!String(text || '').trim()) {
         U.toast({ tone: 'warn', title: '请输入你的行动', msg: '例如：「加练三小时靶场」「约队友吃饭」「开直播回应质疑」' });
@@ -1063,6 +1155,7 @@ ES.narrative = (function () {
     afterSettle: afterSettle, banner: banner, bindFreeInput: bindFreeInput, randomInterlude: randomInterlude,
     setGen: setGen, get current() { return current; }, finishCareer: finishCareer,
     currentChoices: function () { return current ? (current.choices || []) : []; },
+    promotionReady: promotionReady, promotionScene: promotionScene,
     busyNow: function () { return !!busy; },
     applyNode: function (id) { return renderNode(id); }
   };

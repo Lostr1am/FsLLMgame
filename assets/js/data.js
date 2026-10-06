@@ -899,7 +899,7 @@ ES.data = (function () {
         { t: 'speak', role: 'coach', who: '主教练', text: '下周打潮汐，我需要一个愿意背锅的人上。你要不要？' }
       ],
       choices: [
-        { label: '抓住机会，直接答应首发', desc: '一步登天，或者一次社死。', risk: 'high', check: { attr: 'mentality', dc: 15, tag: '心态' }, effects: { attrs: { gameSense: 3, mentality: 2 }, special: { coachTrust: 12, standing: 10 }, res: { condition: -12, fans: 3 }, flags: { debut: true } }, result: { success: '首秀你打出 22/11 与全场最高 ACS，赛后的采访区第一次有人喊你的 ID。', fail: '首秀 8/18，你下场时听见了嘘声。教练拍拍你的肩：「记住这个感觉。」' }, next: 'ch2_press' },
+        { label: '抓住机会，直接答应首发', desc: '一步登天，或者一次社死。', risk: 'high', check: { attr: 'mentality', dc: 15, tag: '心态' }, effects: { attrs: { gameSense: 3, mentality: 2 }, special: { coachTrust: 12, standing: 10 }, res: { condition: -12, fans: 3 }, flags: { debut: true } }, result: { success: '首秀你打出 22/11 与全场最高 ACS，赛后的采访区第一次有人喊你的 ID。', fail: '首秀 8/18，你下场时听见了嘘声。教练拍拍你的肩：「记住这个感觉。」' }, next: '__promotion@ch2_press__' },
         { label: '要求先打训练赛证明自己', desc: '谨慎路线，用一周训练赛换取信任。', risk: 'safe', check: { attr: 'gameSense', dc: 13, tag: '意识' }, effects: { attrs: { gameSense: 2, comms: 2 }, special: { coachTrust: 8, teammateTrust: 6 }, res: { condition: -6 } }, result: { success: '一周训练赛你打了 18 张图，赢了 13 张。教练在名单上把你的名字提前了。', fail: '训练赛表现平平，教练决定再等一周。你回到角落，继续等。' }, next: 'ch2_press' },
         { label: '拒绝，先把手伤养好', desc: '长期主义，但可能错过窗口期。', risk: 'safe', check: null, effects: { res: { hand: 14, condition: 6 }, special: { coachTrust: -6 }, flags: { refusedDebut: true } }, result: { success: '你去康复中心待了十天。回来时首发名单里没有你，但你的手不再疼了。' }, next: 'ch2_press' }
       ]

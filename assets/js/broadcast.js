@@ -81,7 +81,8 @@ ES.broadcast = (function () {
   /* ─────────── 渲染 ─────────── */
   function renderAll() {
     if (!live) return;
-    U.$('#bc-sub').textContent = (S.club ? S.club.league : 'VCT') + ' · ' + S.time.phase + ' · 地图：' + live.map + ' · 羁绊 ' + live.bond.level.name + ' +' + Math.round(live.bond.level.bonus * 100) + '% · 解说：老黄 / 小黎';
+    const benchMe = !!(S.club && S.club.lineup && S.club.lineup.selfStatus === 'bench');
+    U.$('#bc-sub').textContent = (benchMe ? '训练赛（替补席争取首发）' : (S.club ? S.club.league : 'VCT')) + ' · ' + S.time.phase + ' · 地图：' + live.map + ' · 羁绊 ' + live.bond.level.name + ' +' + Math.round(live.bond.level.bonus * 100) + '% · 解说：老黄 / 小黎';
     U.$('#bc-team-a').textContent = S.club.name;
     U.$('#bc-tag-a').textContent = S.club.short + ' · ' + (live.side === 'attack' ? '进攻方' : '防守方');
     U.$('#bc-team-b').textContent = live.opp.name;

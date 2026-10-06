@@ -532,6 +532,7 @@ ES.app = (function () {
       if (p.indexOf('tl:') === 0) window.__DEV_TIMELINE = p.slice(3);
       if (p.indexOf('cl:') === 0) window.__DEV_CLUB = p.slice(3);
       if (p.indexOf('lg:') === 0) window.__DEV_LEGEND = p.slice(3);
+      if (p.indexOf('md:') === 0) window.__DEV_MODE = p.slice(3);
     });
     if (target === 'creator') {
       gotoCreator();
@@ -589,6 +590,12 @@ ES.app = (function () {
             case 'broadcast': openBroadcast(); break;
             case 'tavern': setUiMode('tavern'); break;
             case 'api': setUiMode('tavern'); ES.tavern.openApi(); break;
+            case 'promo':
+              S.special.coachTrust = Math.max(S.special.coachTrust, 62);
+              S.stats.choices = Math.max(S.stats.choices || 0, 6);
+              S.flags.promotionOffered = false;
+              setTimeout(function () { if (ES.narrative.promotionScene) ES.narrative.promotionScene(); }, 400);
+              break;
             case 'squad': openContract(); setTimeout(function () { const b = U.$('[data-pane="contract-squad"]'); if (b) b.click(); }, 300); break;
             case 'clubpane': if (ES.panels.selectDash) ES.panels.selectDash('club'); break;
             case 'attrspane': if (ES.panels.selectDash) ES.panels.selectDash('attrs'); break;

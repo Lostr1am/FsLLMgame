@@ -800,7 +800,8 @@ ES.creator = (function () {
       '<div class="lrow"><span class="lrow-k">年薪 / 合同</span><span class="lrow-v">¥' + U.fmtNum(S.club.salary) + ' · ' + S.club.years + ' 年</span></div>' +
       '<div class="lrow"><span class="lrow-k">违约金</span><span class="lrow-v">¥' + U.fmtNum(S.club.buyout) + '</span></div>' +
       '<div class="lrow"><span class="lrow-k">阵容（' + U.esc(S.club.rosterYear || '—') + '）</span><span class="lrow-v">' + U.esc(S.club.roster.join('、')) + '</span></div>' +
-      '<div class="lrow"><span class="lrow-k">阵容说明</span><span class="lrow-v tiny dim-2">' + U.esc(S.club.rosterNote || '') + '</span></div>'
+      '<div class="lrow"><span class="lrow-k">阵容说明</span><span class="lrow-v tiny dim-2">' + U.esc(S.club.rosterNote || '') + '</span></div>' +
+      '<div class="lrow"><span class="lrow-k">队内定位</span><span class="lrow-v">' + U.esc(ES.state.lineupText(S)) + '</span></div>'
       : '<div class="empty tiny dim">未选择俱乐部</div>';
   }
 
@@ -829,7 +830,7 @@ ES.creator = (function () {
   function randomAll() {
     setup = blankSetup();
     setup.difficulty = U.pick(D.DIFFICULTIES.filter(function (d) { return !d.cheat; })).id;
-    setup.mode = window.__DEV_LEGEND ? 'legend' : U.pick(D.MODES).id;
+    setup.mode = window.__DEV_LEGEND || window.__DEV_MODE === 'legend' ? 'legend' : (window.__DEV_MODE === 'custom' ? 'custom' : U.pick(D.MODES).id);
     if (setup.mode === 'legend') setup.legendId = window.__DEV_LEGEND || U.pick(D.LEGENDS).id;
     setup.origin = U.pick(D.ORIGINS).id;
     setup.talentDirections = U.pickMany(D.TALENT_DIRECTIONS, U.randInt(2, 3)).map(function (d) { return d.id; });
