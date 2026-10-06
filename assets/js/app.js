@@ -1,3 +1,33 @@
+/* ══════════ 开发用：假 API（mock fetch，离线验证 AI 剧情链路） ══════════ */
+const MOCK_STORY = [
+  '<thinking>这一段要让玩家第一次尝到「能打」的滋味，同时埋下数据争议与体能代价的伏笔。</thinking>',
+  '<maintext>训练赛第三张图，比分 11:11。</maintext>',
+  '<maintext>你从 A 大身位提前开出，闪身卡住窗口，一枪带走对面狙击手。剩下两个人从后路绕过来，你退了半步，贴着箱子换弹。书呆在耳机里喊：「还剩两个，一个残血。」\n\n你没回话，把准星压在通道口那条线上。第一个人影进来的瞬间，你点了两枪。第二个人影紧跟着出现，你压枪扫过去，屏幕上跳出残局提示。\n\n「漂亮。」赵行舟的声音从身后传来。他不知什么时候站在了你椅子后面，手里拿着战术板，板子上还留着他刚画的进攻路线。他没看屏幕，看的是你的手。\n\n「刚才那波，你为什么不等队友？」\n\n「对面烟封得太死，等就是送。」你说，「而且他们不知道我在这儿。」\n\n赵行舟在板子上敲了两下，没说是也没说不是。他把板子夹回腋下，往门口走了两步，又停下。\n\n「明天早训，你提前半小时到。」他说，「我想看你打十组靶。」</maintext>',
+  '<sum>· 训练赛残局 1v3 成功，队内评价上升\n· 枪法 68 → 70（靶场加练见效）\n· 教练信任 +6（备注从「观察」改为「核心候选」）\n· 体能 -6、状态 -6（连续高强度对抗）\n· 粉丝 +80（青训群流出的片段被搬运）\n· 时间推进 7 天</sum>',
+  '<option>第二天早训提前半小时到靶场，按教练要求打满十组 | risk:safe | 稳定的努力，几乎不会出错</option>',
+  '<option>约书呆去食堂，旁敲侧击问教练组最近在评估什么 | risk:safe | check:comms:12:沟通 | 用一顿饭换情报</option>',
+  '<option>接下来一周全扑在训练赛上，直播和商务先全推掉 | risk:normal | check:stamina:14:体能 | 推进一周，可能透支身体</option>',
+  '<option>把那份靶场原始记录要过来，自己先核一遍数据 | risk:normal | check:insight:13:悟性 | 直面数据争议，掌握主动权</option>',
+  '<option>给林晚回消息，问她要不要来探一次青训营 | risk:high | check:charisma:15:魅力 | 借媒体放大自己，风险与曝光并存</option>',
+  '<vars>{"time":{"advanceDays":7},"attrs":{"aim":2},"special":{"coachTrust":6},"res":{"condition":-6,"stamina":-1},"fans":80,"rel":{"书呆":2},"flags":{"scrimClutch":true}}</vars>'
+].join('\n');
+
+function installMockStory() {
+  const canned = MOCK_STORY;
+  const enc = function (s) { return new TextEncoder().encode(s); };
+  window.fetch = function (url, opt) {
+    const body = opt && opt.body ? JSON.parse(opt.body) : {};
+    if (body.stream) {
+      const chunks = [];
+      for (let i = 0; i < canned.length; i += 26) chunks.push('data: ' + JSON.stringify({ choices: [{ delta: { content: canned.slice(i, i + 26) } }] }) + '\n\n');
+      chunks.push('data: [DONE]\n\n');
+      let i = 0;
+      return Promise.resolve({ ok: true, status: 200, body: { getReader: function () { return { read: function () { return Promise.resolve(i < chunks.length ? { done: false, value: enc(chunks[i++]) } : { done: true }); } }; } } });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(JSON.stringify({ choices: [{ message: { content: canned } }] })); } });
+  };
+  window.__MOCK_STORY = true;
+}
 window.ES = window.ES || {};
 /* ═══════════════════════════════════════════════════════════════
    应用外壳：引导启动 / 屏幕切换 / 快捷键 / 设置 / 全局事件
@@ -590,6 +620,23 @@ ES.app = (function () {
             case 'broadcast': openBroadcast(); break;
             case 'tavern': setUiMode('tavern'); break;
             case 'api': setUiMode('tavern'); ES.tavern.openApi(); break;
+            case 'aimock': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-story-v1' }) });
+              ES.api.save();
+              installMockStory();
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 600);
+              break;
+            }
+            case 'aimock2': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-story-v1' }) });
+              ES.api.save();
+              installMockStory();
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 400);
+              setTimeout(function () { ES.narrative.choose(3); }, 5000);
+              break;
+            }
             case 'promo':
               S.special.coachTrust = Math.max(S.special.coachTrust, 62);
               S.stats.choices = Math.max(S.stats.choices || 0, 6);

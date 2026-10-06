@@ -436,42 +436,80 @@ ES.data = (function () {
     { id: 'launch', name: '开服首日', phase: '开服首日', year: 2023, season: '国服元年', month: 7, day: 12, icon: 'sparkle', roster: '2023', tier: 'T3',
       tagline: '国服正式公测，排位点燃全网', quote: '凌晨五点你就排进了第一局。榜单一夜之间全是陌生 ID。',
       attrs: { reaction: 5, stamina: 3 }, startNode: 'ch1_launch', note: '俱乐部抢人大战前夜' },
-    { id: 'spring24', name: '第一赛季 · 萌芽期', phase: '第一联赛期', year: 2024, season: 'S1', month: 2, day: 20, icon: 'flag', roster: '2024', tier: 'T2',
+    { id: 'spring24', name: '第一赛季 · 萌芽期', phase: '第一联赛期', year: 2024, season: 'S1', month: 5, day: 20, icon: 'flag', roster: '2024', tier: 'T2',
       tagline: 'VCT CN 元年开启，排位与职业体系建立', quote: '微博热搜前十全是它。俱乐部的车一辆接一辆开进基地。',
       attrs: { gameSense: 4, charisma: 4 }, startNode: 'ch1_tryout', note: '抢人大战 · 席位争夺' },
-    { id: 'scout24', name: '青训选拔期', phase: '青训选拔期', year: 2024, season: 'S1', month: 4, day: 9, icon: 'search', roster: '2024', tier: 'T2',
+    { id: 'scout24', name: '青训选拔期', phase: '青训选拔期', year: 2024, season: 'S1', month: 3, day: 9, icon: 'search', roster: '2024', tier: 'T2',
       tagline: '各队青训营与挑战者赛集中招新', quote: '两百份简历，只留十二个名字。你站在队列里，手心全是汗。',
       attrs: { comms: 4 }, startNode: 'ch1_tryout', note: '试训压力最大的窗口' },
     { id: 'league24', name: '第一届联赛期', phase: '第一联赛期', year: 2024, season: 'S1', month: 6, day: 3, icon: 'trophy', roster: '2024', tier: 'T1',
       tagline: '首个大型线下赛事，大名单十几人抢五个位置', quote: '你已经坐了六周冷板凳，看着首发在台上接受欢呼。',
       attrs: { aim: 4, mentality: 4 }, startNode: 'ch1_debut', note: '直接进入竞技节奏' },
-    { id: 'worlds24', name: '第一年世界冠军赛期', phase: '世界冠军赛期', year: 2024, season: 'S1', month: 8, day: 1, icon: 'crown', roster: '2024', tier: 'T0',
+    { id: 'worlds24', name: '第一年世界冠军赛期', phase: '世界冠军赛期', year: 2024, season: 'S1', month: 10, day: 1, icon: 'crown', roster: '2024', tier: 'T0',
       tagline: '首届全球冠军赛，CN 赛区冲击世界之巅', quote: '酒店窗外的城市在发光。有些人一辈子只有这一次机会。',
       attrs: { mentality: 8, gameSense: 6, aim: 4, stamina: -4 }, startNode: 'ch1_worlds', note: '最高强度 · 舆论峰值' },
-    { id: 'rise25', name: '第二年 · 强队崛起期', phase: '第一联赛期', year: 2025, season: 'S2', month: 2, day: 18, icon: 'trend-up', roster: '2025', tier: 'T1',
+    { id: 'rise25', name: '第二年 · 强队崛起期', phase: '第一联赛期', year: 2025, season: 'S2', month: 5, day: 18, icon: 'trend-up', roster: '2025', tier: 'T1',
       tagline: '豪门格局初成，BLG 与 EDG 群雄并起', quote: '转会窗的最后一天，豪门的车停在你家楼下。',
       attrs: { charisma: 5, insight: 4 }, startNode: 'ch1_debut', note: '王朝成型 · 身价暴涨' },
     { id: 'dynasty25', name: '第三年 · 王朝期', phase: '第一联赛期', year: 2025, season: 'S2', month: 7, day: 6, icon: 'crown', roster: '2025', tier: 'T0',
       tagline: '统治级战队出现，你被写进了「下一个时代」的名单', quote: '所有人都在等你兑现天赋，包括你自己。',
       attrs: { aim: 5, charisma: 4 }, startNode: 'ch2_press', note: '高光与压力同步拉满' },
-    { id: 'shift26', name: '第四年 · 格局剧变期', phase: '第一联赛期', year: 2026, season: 'S3', month: 3, day: 12, icon: 'refresh', roster: '2026', tier: 'T0',
+    { id: 'shift26', name: '第四年 · 格局剧变期', phase: '第一联赛期', year: 2026, season: 'S3', month: 5, day: 12, icon: 'refresh', roster: '2026', tier: 'T0',
       tagline: '版本巨变、老将更替潮，旧体系一夜失效', quote: '补丁把过去三年的答案全部作废。有人沉了，有人起飞。',
       attrs: { insight: 8, gameSense: 4, reaction: -3 }, startNode: 'ch3_league', note: '版本洗牌 · 转型窗口' },
     { id: 'legend27', name: '第五年 · 传奇时代', phase: '第一联赛期', year: 2027, season: 'S4', month: 4, day: 2, icon: 'sparkle', roster: '2026→推演', tier: 'T0',
       tagline: '电竞商业化爆发，选手开始成为真正的明星', quote: '你的脸出现在地铁广告上，而你的手还在疼。',
       attrs: { charisma: 8, insight: 4 }, startNode: 'ch4_transfer', note: '演绎扩展区 · 商业与生涯取舍' },
-    { id: 'free', name: '完全自由时间', phase: '第一联赛期', year: 2026, season: 'S3', month: 1, day: 1, icon: 'compass', roster: '2026', tier: 'T1',
+    { id: 'free', name: '完全自由时间', phase: '第一联赛期', year: 2026, season: 'S3', month: 5, day: 1, icon: 'compass', roster: '2026', tier: 'T1',
       tagline: '自定义任意时间点，可前可后', quote: '你决定从哪一天开始算起。',
       attrs: {}, startNode: 'ch1_tryout', note: '自由开局 · 世界状态由你指定' },
-    { id: 'after', name: '结局后时代', phase: '第一联赛期', year: 2028, season: 'S5', month: 1, day: 8, icon: 'moon', roster: '2026→推演', tier: 'T1',
+    { id: 'after', name: '结局后时代', phase: '第一联赛期', year: 2028, season: 'S5', month: 5, day: 8, icon: 'moon', roster: '2026→推演', tier: 'T1',
       tagline: '夺冠退役之后，以新身份回到这个圈子', quote: '训练室的灯还亮着，只是坐在那里的不再是你。',
       attrs: { insight: 6, mentality: 6 }, startNode: 'ch5_final', note: '教练 / 老板 / 解说 / 主播线' },
-    { id: 'worlds25', name: '巴黎世界冠军赛期', phase: '世界冠军赛期', year: 2025, season: 'S2', month: 8, day: 6, icon: 'trophy', roster: '2025', tier: 'T0',
+    { id: 'worlds25', name: '巴黎世界冠军赛期', phase: '世界冠军赛期', year: 2025, season: 'S2', month: 10, day: 6, icon: 'trophy', roster: '2025', tier: 'T0',
       tagline: 'S2 世界冠军赛在巴黎打响，NRG 夺冠',
       quote: '巴黎的场馆里没有一张熟悉的脸——除了你。',
       attrs: { mentality: 6, comms: 4 }, startNode: 'ch5_worlds', note: '国际赛场 · 强强对话' }
   ];
 
+
+  /* ══════════ 叙事文风（融合自《夏瑾 天琴座 V2 Beta》预设，已做电竞现实向改编） ══════════ */
+  const STORY_STYLE = [
+    '【视角与信息】',
+    '· 有限视角：任何角色（含主角）只掌握其渠道能获知的情报；情报必须有传播途径（群里刷到、记者来电、教练口头通知、赛后采访）。禁止叙述者视角的剧透与「元词汇」。',
+    '· 可写主角内心戏，以自由间接引语自然融入叙事，直接给出，不写「他想」「他心中吐槽」。',
+    '【白描优先】',
+    '· 用动作、语言、神态本身传递情绪，可用环境与氛围烘托。禁止作者出面补充解释（如「这个动作体现了他很紧张」）。',
+    '· 禁止解释性比喻补述（如「这句话像闪电击中他」），禁止用比喻描写语气、声音、眼神。',
+    '【语言】',
+    '· 对白口语化、像活人说话：允许顿挫、语气词、语塞、词不达意、口是心非；见什么人说什么话，态度有别。',
+    '· 每句对白都要言之有物；不要五字以内的孤立短对白；不要文艺腔、舞台腔，不要不分场合地故作俏皮。',
+    '· 对白独立成段，描写与对白分离。',
+    '· 杜绝欧化句式与名词化表达（如「这个动作」）；避免连续并列短句，合并为长单句。',
+    '【节奏与结构】',
+    '· 每回合至少推进三段渐进发展的新情节，避免原地打转；不要让他人突然介入，转场必须有过程。',
+    '· 大量使用短自然段，段落长短交错。',
+    '· 正文以某个非玩家角色的具体言行收尾；结尾不做情感升华、不做总结断言。',
+    '【情绪与人物】',
+    '· 有情绪的通俗文字好过有美感的寡淡文字；情绪要渗进所有叙述。',
+    '· 人物是复杂叠加的，不是刻板印象；角色之间平等而互相尊重，不写傲慢霸道与狂热崇拜。',
+    '· 不要让角色重复近似的台词或与前文相同的动作。',
+    '【抗滥用】',
+    '· 避免被用滥的喻体（石子、湖面、拉满的弓）与套话（指节发白、睫毛、喉结、弧度、锁骨）。',
+    '· 数量尽量用约数表达（几步、几个小时、若干天），设定中的精确数值除外。',
+    '· 不炫技、不做文学拔高，不写散文式诗意。'
+  ];
+
+  /* 行动选项设计规则（融合自预设的「追加行动选项」，按本作 3—5 项收敛） */
+  const OPTION_RULES = [
+    '【行动选项设计】必须给出 3—5 个选项，玩家（{{user}}）是每个选项的隐形主语，不写主语。',
+    '· 选项 1：平滑推进。顺承前文的小行动，同场景内产生较小推动。',
+    '· 选项 2：另一种侧重。同样平滑，但换一种做法或对象（例如换成沟通、训练、商业、舆论）。',
+    '· 选项 3：推进时间或空间。明确写出「接下来几天 / 去某地 / 约见某人」，把节奏往前推。',
+    '· 选项 4：严肃路线。追主线、查线索、回收前文伏笔，或处理合同、伤病、队内矛盾。',
+    '· 选项 5（可选）：超展开。脱离当前事件线，引入新的机会或完全换一种基调。',
+    '· 内容要简练：只给言行，不加解释与评述；以对白为主也可以；不得重复前文出现过的言行。'
+  ];
   /* ══════════ 俱乐部资料库（附录 Q：赛区席位 · 2025 阵容 · 资源分级） ══════════ */
   const CLUBS = [
     /* ── VCT CN 赛区（12 队） ── */
@@ -1191,6 +1229,7 @@ ES.data = (function () {
     CATCHPHRASES: CATCHPHRASES, SIGNS: SIGNS, GENDERS: GENDERS, ORIENTATIONS: ORIENTATIONS, LOVE_STYLES: LOVE_STYLES,
     NPCS: NPCS, TEAMMATE_POOL: TEAMMATE_POOL, QUESTS: QUESTS, NEWS: NEWS, ACHIEVEMENTS: ACHIEVEMENTS,
     SCENES: SCENES, FILLER_SCENES: FILLER_SCENES, FREE_ACTIONS: FREE_ACTIONS,
-    DANMU: DANMU, CAST_LINES: CAST_LINES, ORDERS: ORDERS, INJURIES: INJURIES
-  };
+    DANMU: DANMU, CAST_LINES: CAST_LINES, ORDERS: ORDERS, INJURIES: INJURIES,
+    STORY_STYLE: STORY_STYLE, OPTION_RULES: OPTION_RULES,
+};
 })();

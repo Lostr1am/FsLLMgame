@@ -511,6 +511,222 @@ ES.state = (function () {
     if (L.selfStatus === 'starter') return L.replaced ? ('首发 · 顶替 ' + L.replaced) : '首发 · 名单内';
     return '替补席（' + L.current.length + ' 人首发）· 需争取首发';
   }
+  /* ══════════ 赛季赛历（规则书 18.2 / 27.4 / 27.5） ══════════ */
+  const SEASON_MONTHS = {
+    1: { name: '季前休整 / 开服预热', kind: 'off' },
+    2: { name: '排位开启 · 季前备战', kind: 'pre' },
+    3: { name: '青训招新季 · 试训与选秀', kind: 'scout' },
+    4: { name: '启点赛（Kickoff）', kind: 'kickoff', league: true },
+    5: { name: '联赛第一分段 · 常规赛', kind: 'league', league: true, playoff: true },
+    6: { name: '大师赛一（国际）', kind: 'masters', intl: 'masters1' },
+    7: { name: '联赛第二分段 · 常规赛', kind: 'league', league: true, window: '夏季转会窗' },
+    8: { name: '大师赛二（国际）', kind: 'masters', intl: 'masters2' },
+    9: { name: '联赛第三分段 · 常规赛 + 季后赛', kind: 'league', league: true, playoff: true },
+    10: { name: '全球冠军赛（Champions）', kind: 'champions', intl: 'champions' },
+    11: { name: '冬季转会窗 / 休赛期', kind: 'off', window: '冬季转会窗' },
+    12: { name: '年度颁奖盛典 · 全明星周末', kind: 'award' }
+  };
+  /* 国际赛事举办地（取自规则书人物档中的现实赛事记录，缺省留待定） */
+  const INTL_HOSTS = {
+    2024: { masters1: '曼谷', masters2: '上海', champions: '首尔' },
+    2025: { masters1: '曼谷', masters2: '多伦多', champions: '巴黎' },
+    2026: { masters1: '待定', masters2: '待定', champions: '待定' }
+  };
+  function hostOf(year, key) {
+    const h = INTL_HOSTS[year] || {};
+    return h[key] || '待定';
+  }
+  /** 该月是否赛区联赛比赛月 */
+  function leagueMonth(month) { return !!(SEASON_MONTHS[month] && SEASON_MONTHS[month].league); }
+  /** 同赛区对手（按日期确定性抽取，保证每次渲染一致） */
+  function opponentFor(s, month, day) {
+    const region = (s.club && s.club.region) || 'CN';
+    const pool = D.CLUBS.filter(function (c) { return c.region === region && (!s.club || c.id !== s.club.id); });
+    if (!pool.length) return null;
+    const seed = s.time.year * 10000 + month * 100 + day;
+    return pool[seed % pool.length];
+  }
+  /** 某月的真实赛程（阶段节点 + 联赛比赛日 + 转会窗） */
+  function monthSchedule(s, month) {
+    const out = [];
+    const meta = SEASON_MONTHS[month];
+    if (!meta) return out;
+    const year = s.time.year;
+    const isS1 = year <= 2024 && month >= 1 && month <= 3;   /* 2024 之前的 1—3 月是筹建期 */
+    if (meta.intl) {
+      const city = hostOf(year, meta.intl);
+      const label = meta.intl === 'champions' ? '全球冠军赛' : (meta.intl === 'masters1' ? '大师赛一' : '大师赛二');
+      out.push({ day: 5, text: label + ' · 小组赛（' + city + '）', tone: 'gold', icon: 'sword', kind: 'intl' });
+      out.push({ day: 19, text: label + ' · 淘汰赛（' + city + '）', tone: 'gold', icon: 'medal', kind: 'intl' });
+      out.push({ day: 26, text: label + ' · 决赛日（' + city + '）', tone: 'gold', icon: 'trophy', kind: 'intl' });
+    }
+    if (meta.league && !isS1) {
+      /* 常规赛：每周三、周六两场（VCT CN 真实节奏） */
+      for (let d = 1; d <= 28; d++) {
+        if (d % 7 !== 3 && d % 7 !== 6) continue;
+        const opp = opponentFor(s, month, d);
+        if (!opp) continue;
+        out.push({ day: d, text: (month === 4 ? '启点赛' : 'VCT ' + ((s.club && s.club.region) || 'CN') + ' 常规赛') + ' · vs ' + opp.short, tone: 'cyan', icon: 'sword', kind: 'match', opponent: opp.id });
+      }
+      if (meta.playoff) {
+        out.push({ day: 24, text: '阶段季后赛 · 八进四', tone: 'cyan', icon: 'swords', kind: 'match' });
+        out.push({ day: 27, text: '阶段季后赛 · 半决赛', tone: 'cyan', icon: 'swords', kind: 'match' });
+        out.push({ day: 28, text: '阶段总决赛（BO5）', tone: 'gold', icon: 'trophy', kind: 'match' });
+      }
+    }
+    if (meta.scout) out.push({ day: 12, text: '青训营公开试训日', tone: 'violet', icon: 'users', kind: 'scout' });
+    if (meta.window) out.push({ day: 8, text: meta.window + '开启 · 合同谈判', tone: 'gold', icon: 'briefcase', kind: 'window' });
+    if (meta.kind === 'award') {
+      out.push({ day: 15, text: '年度颁奖盛典（最佳新人 / 最佳选手）', tone: 'gold', icon: 'medal', kind: 'award' });
+      out.push({ day: 22, text: '全明星周末 · 表演赛', tone: 'violet', icon: 'star', kind: 'award' });
+    }
+    if (meta.kind === 'off') out.push({ day: 20, text: '俱乐部年度休整 / 商业活动', tone: 'dim', icon: 'clock', kind: 'off' });
+    if (meta.kind === 'pre') {
+      out.push({ day: 6, text: '排位赛季开启 · 冲分与试训', tone: 'cyan', icon: 'target', kind: 'train' });
+      out.push({ day: 18, text: '季前赛训营 · 阵容磨合', tone: 'cyan', icon: 'users', kind: 'train' });
+    }
+    /* 兜底：任何月份都要给模型一个可对齐的日程 */
+    if (!out.length) out.push({ day: 14, text: meta.name + ' · 队内训练与排位', tone: 'dim', icon: 'target', kind: 'train' });
+    return out;
+  }
+  /** 下一场比赛（供面板与提示词引用） */
+  function nextMatch(s) {
+    const now = s.time.day;
+    const cur = monthSchedule(s, s.time.month).filter(function (e) { return e.kind === 'match' && e.day >= now; });
+    if (cur.length) return { inDays: cur[0].day - now, text: cur[0].text, month: s.time.month, day: cur[0].day };
+    for (let i = 1; i <= 3; i++) {
+      const m = ((s.time.month - 1 + i) % 12) + 1;
+      const list = monthSchedule(s, m).filter(function (e) { return e.kind === 'match' || e.kind === 'intl'; });
+      if (list.length) return { inDays: (28 - now) + (i - 1) * 28 + list[0].day, text: list[0].text, month: m, day: list[0].day };
+    }
+    return null;
+  }
+  /* ══════════ 剧情变量回写（AI 的 <vars> 块；时间由剧情驱动） ══════════ */
+  const ATTR_ALIAS = {
+    '枪法': 'aim', '反应': 'reaction', '意识': 'gameSense', '心态': 'mentality', '沟通': 'comms',
+    '身法': 'movement', '体能': 'stamina', '魅力': 'charisma', '悟性': 'insight', '气运': 'luck'
+  };
+  const RES_ALIAS = {
+    '竞技状态': 'condition', '状态': 'condition', '手部健康': 'hand', '手': 'hand',
+    '伤病风险': 'injury', '伤病': 'injury', '舆论热度': 'heat', '热度': 'heat'
+  };
+  const SPECIAL_ALIAS = {
+    '名声': 'fame', '声望': 'fame', '名气': 'fame', '教练信任': 'coachTrust',
+    '队友信任': 'teammateTrust', '队内地位': 'standing', '地位': 'standing'
+  };
+  function attrKeyOf(v) {
+    const s = String(v || '').trim();
+    if (D.ATTRS && D.ATTRS.some(function (a) { return a.k === s; })) return s;
+    return ATTR_ALIAS[s] || s;
+  }
+  /** 把任意形态的 <vars> 补丁归一化 */
+  function normalizeStoryVars(patch) {
+    const out = { attrs: {}, res: {}, special: {}, relations: {}, flags: {}, metrics: {}, status: [], money: 0, time: null, notes: [] };
+    if (!patch || typeof patch !== 'object') return out;
+    const num = function (v) { const n = Number(v); return isNaN(n) ? 0 : n; };
+    const takeAttrs = function (obj) {
+      Object.keys(obj || {}).forEach(function (k) {
+        const key = attrKeyOf(k);
+        if (out.attrs[key] !== undefined) out.attrs[key] += num(obj[k]);
+        else out.attrs[key] = num(obj[k]);
+      });
+    };
+    const takeRes = function (obj) {
+      Object.keys(obj || {}).forEach(function (k) {
+        const key = RES_ALIAS[k] || RES_ALIAS[String(k).replace(/^状态\./, '')] || k;
+        out.res[key] = (out.res[key] || 0) + num(obj[k]);
+      });
+    };
+    const takeSpecial = function (obj) {
+      Object.keys(obj || {}).forEach(function (k) {
+        const key = SPECIAL_ALIAS[k] || k;
+        if (key === 'fans') { out.res.fans = (out.res.fans || 0) + num(obj[k]); return; }
+        out.special[key] = (out.special[key] || 0) + num(obj[k]);
+      });
+    };
+    /* 中文键 / 内部键 / 前缀键（属性.枪法）都能吃 */
+    Object.keys(patch).forEach(function (k) {
+      const v = patch[k];
+      if (k === 'time' || k === 'date' || k === 'advanceDays' || k === 'days') return;
+      if (k === 'attrs' || k === '属性') return takeAttrs(v);
+      if (k === 'res' || k === '状态') return takeRes(v);
+      if (k === 'special' || k === '特殊') return takeSpecial(v);
+      if (k === 'flags') { Object.keys(v || {}).forEach(function (x) { out.flags[x] = v[x]; }); return; }
+      if (k === 'metrics') { Object.keys(v || {}).forEach(function (x) { out.metrics[x] = (out.metrics[x] || 0) + num(v[x]); }); return; }
+      if (k === 'status' || k === 'statuses') { if (Array.isArray(v)) out.status = out.status.concat(v); return; }
+      if (k === 'rel' || k === 'relations' || k === '关系') {
+        Object.keys(v || {}).forEach(function (n) { out.relations[n] = (out.relations[n] || 0) + num(v[n]); });
+        return;
+      }
+      if (k === 'money' || k === '金钱') { out.money += num(v); return; }
+      if (k === 'fans' || k === '粉丝') { out.res.fans = (out.res.fans || 0) + num(v); return; }
+      if (k.indexOf('属性.') === 0) { takeAttrs({ [k.slice(3)]: v }); return; }
+      if (k.indexOf('状态.') === 0) { takeRes({ [k.slice(3)]: v }); return; }
+      if (k.indexOf('关系.') === 0) { out.relations[k.slice(3)] = (out.relations[k.slice(3)] || 0) + num(v); return; }
+      if (k.indexOf('资源.') === 0) { const kk = k.slice(3); if (kk === '金钱') out.money += num(v); else if (kk === '粉丝') out.res.fans = (out.res.fans || 0) + num(v); return; }
+      /* 裸属性名 / 裸特殊值名 */
+      if (ATTR_ALIAS[k] || (D.ATTRS && D.ATTRS.some(function (a) { return a.k === k; }))) { takeAttrs({ [k]: v }); return; }
+      if (SPECIAL_ALIAS[k]) { takeSpecial({ [k]: v }); return; }
+      if (RES_ALIAS[k]) { takeRes({ [k]: v }); return; }
+    });
+    /* 时间：advanceDays / date / set 三种写法 */
+    const tt = patch.time && typeof patch.time === 'object' ? patch.time : {};
+    const adv = num(tt.advanceDays || tt.days || patch.advanceDays || patch.days);
+    const abs = tt.date || patch.date || tt.day === undefined ? (tt.date || patch.date) : null;
+    out.time = { advanceDays: adv > 0 ? Math.min(Math.round(adv), 400) : 0, set: null, raw: tt };
+    if (tt.set && typeof tt.set === 'object') out.time.set = tt.set;
+    if (abs && /^\d{4}-\d{1,2}-\d{1,2}/.test(String(abs))) {
+      const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(abs));
+      out.time.set = { year: +m[1], month: +m[2], day: +m[3] };
+    }
+    return out;
+  }
+  /** 应用剧情变量；返回人类可读的结算条目 */
+  function applyStoryVars(s, patch) {
+    const v = normalizeStoryVars(patch);
+    const notes = [];
+    const fromDate = { year: s.time.year, month: s.time.month, day: s.time.day };
+    /* 时间 */
+    let advanced = 0;
+    if (v.time.set) {
+      const st = v.time.set;
+      if (st.year && st.year >= fromDate.year) {
+        const jumped = (st.year - s.time.year) * 12 + ((st.month || s.time.month) - s.time.month);
+        if (jumped >= 0 && jumped <= 60) {
+          s.time.year = st.year;
+          if (st.month) s.time.month = U.clamp(st.month, 1, 12);
+          if (st.day) s.time.day = U.clamp(st.day, 1, 28);
+          if (st.clock) s.time.clock = String(st.clock);
+          advanced = jumped;
+        }
+      }
+    }
+    const days = v.time.advanceDays || 0;
+    if (days > 0) { advanceTime(s, days); advanced += days; }
+    if (advanced > 0) {
+      notes.push('时间：' + fromDate.month + '/' + fromDate.day + ' → ' + s.time.month + '/' + s.time.day +
+        '（+' + advanced + ' 天 · ' + s.time.phase + '）');
+    }
+    /* 属性/资源/特殊/金钱 */
+    const deltas = apply(s, {
+      attrs: v.attrs, res: v.res, special: v.special, money: v.money,
+      flags: v.flags, metrics: v.metrics, status: v.status
+    }, { silent: true });
+    (deltas || []).forEach(function (d) {
+      if (!d.delta) return;
+      if (d.kind === 'money') notes.push(d.label + ' ' + (d.delta > 0 ? '+' : '') + Math.round(d.delta));
+      else notes.push(d.label + ' ' + d.from + ' → ' + d.to);
+    });
+    /* 关系（按 NPC 姓名） */
+    Object.keys(v.relations).forEach(function (nm) {
+      const r = s.relations.filter(function (x) { return x.name === nm; })[0];
+      if (!r) return;
+      const before = Math.round(r.affection);
+      r.affection = U.clamp(r.affection + v.relations[nm], 0, 100);
+      if (Math.round(r.affection) !== before) notes.push(nm + ' 好感 ' + before + ' → ' + Math.round(r.affection));
+    });
+    return { notes: notes, applied: v, advanced: advanced, from: fromDate, to: { year: s.time.year, month: s.time.month, day: s.time.day } };
+  }
   /* ── 任务 ── */
   function makeQuests(state) {
     const q = [];
@@ -1016,6 +1232,8 @@ ES.state = (function () {
     seasonLabel: seasonLabel, seasonOfYear: seasonOfYear, rosterYearFor: rosterYearFor, buildTalent: buildTalent, positionOf: positionOf,
     apply: apply, effective: effective, train: train, statusMod: statusMod,
     promotePlayer: promotePlayer, lineupText: lineupText,
+    applyStoryVars: applyStoryVars, normalizeStoryVars: normalizeStoryVars, attrKeyOf: attrKeyOf,
+    monthSchedule: monthSchedule, nextMatch: nextMatch, SEASON_MONTHS: SEASON_MONTHS, hostOf: hostOf,
     ovr: ovr, ovrDetail: ovrDetail, level: level, nextLevel: nextLevel, breakthroughRate: breakthroughRate,
     marketValue: marketValue, marketDetail: marketDetail, bondOf: bondOf, labelOf: labelOf,
     pa: pa, paLabel: paLabel, ovrGrade: ovrGrade, evaluation: evaluation, endingTitle: endingTitle,

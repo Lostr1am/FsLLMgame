@@ -17,11 +17,13 @@ ES.api = (function () {
     fallbackLocal: true,           /* API 失败时回退到本地叙事引擎 */
     primary: {
       baseUrl: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini',
-      temperature: 0.85, maxTokens: 1200, timeout: 90000, stream: true, headers: ''
+      temperature: 0.95, maxTokens: 1200, timeout: 90000, stream: true, headers: '',
+      topP: 0.95, presencePenalty: 0.3, frequencyPenalty: 0
     },
     secondary: {
       enabled: false, baseUrl: 'https://api.deepseek.com/v1', apiKey: '', model: 'deepseek-chat',
-      temperature: 0.3, maxTokens: 400, timeout: 60000, stream: false, headers: ''
+      temperature: 0.3, maxTokens: 400, timeout: 60000, stream: false, headers: '',
+      topP: 0.5, presencePenalty: 0, frequencyPenalty: 0
     }
   };
 
@@ -70,6 +72,10 @@ ES.api = (function () {
   function bodyFor(t, messages, stream) {
     const b = { model: t.model, messages: messages, temperature: Number(t.temperature), stream: !!stream };
     if (t.maxTokens) b.max_tokens = Number(t.maxTokens);
+    /* 采样参数（默认对齐剧情预设：top_p 0.95 / presence 0.3 抗重复） */
+    b.top_p = t.topP === undefined ? 0.95 : Number(t.topP);
+    b.presence_penalty = t.presencePenalty === undefined ? 0.3 : Number(t.presencePenalty);
+    b.frequency_penalty = Number(t.frequencyPenalty || 0);
     return b;
   }
 
@@ -120,7 +126,10 @@ ES.api = (function () {
       }
       return res.json();
     }).then(function (json) {
-      return { text: extractText(json), target: target, ms: Date.now() - started, usage: json.usage || null, streamed: false };
+      return { text: extractText(json), target: target, ms: Date.now() - started, usage: json.usage || null, streamed: false ,
+      top_p: cfg.topP === undefined ? 0.95 : cfg.topP,
+      presence_penalty: cfg.presencePenalty === undefined ? 0.3 : cfg.presencePenalty,
+      frequency_penalty: cfg.frequencyPenalty || 0};
     }).catch(function (e) { clearTimeout(timer); throw e; });
   }
 

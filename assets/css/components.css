@@ -690,7 +690,7 @@
 /* 赛程 / 日历 */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .cal-head{font-family:var(--font-display);font-size:var(--fs-3xs);color:var(--txt-4);text-align:center;letter-spacing:.1em;padding-bottom:4px}
-.cal-cell{position:relative;aspect-ratio:1;display:flex;flex-direction:column;gap:2px;padding:5px;font-family:var(--font-mono);font-size:var(--fs-2xs);
+.cal-cell{position:relative;min-height:58px;display:flex;flex-direction:column;gap:2px;padding:5px;font-family:var(--font-mono);font-size:var(--fs-2xs);
   color:var(--txt-3);background:rgba(255,255,255,.02);border:1px solid var(--line);clip-path:var(--clip-tag);transition:all var(--dur-2) var(--ease)}
 .cal-cell:hover{border-color:var(--line-3);background:rgba(255,255,255,.06);transform:translateY(-2px)}
 .cal-cell[data-ev="match"]{border-color:color-mix(in oklab,var(--accent) 45%,transparent);color:var(--accent);background:color-mix(in oklab,var(--accent) 9%,transparent)}
@@ -706,3 +706,8 @@
 .sec-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
 .sec-title .icon{color:var(--accent)}
 .sub-title{font-size:var(--fs-xs);color:var(--txt-3);font-family:var(--font-display);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+
+/* 赛程日历：格子紧凑，明细列表保留可视高度 */
+.cal-cell.has-ev{background:rgba(79,227,255,.05)}
+#calendar-list{min-height:132px;max-height:38vh;overflow-y:auto}
+.cal-cell .ev{white-space:normal;word-break:break-all}

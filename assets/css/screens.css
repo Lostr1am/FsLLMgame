@@ -493,3 +493,24 @@
 .tv-audit-row[data-ok="false"]{border-color:color-mix(in oklab,var(--red) 45%,transparent)}
 .tv-audit-task{color:var(--accent)}
 .tv-audit-target{color:var(--txt-2)}
+
+/* ── AI 剧情引擎输出块 ── */
+.story-ai{display:flex;flex-direction:column;gap:2px}
+.story-p.live{opacity:.92}
+.story-p.live::after{content:"▍";color:var(--accent);animation:blink 1s steps(2) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.story-sum{border:1px solid var(--line-1);border-left:3px solid var(--gold);border-radius:2px;
+  background:linear-gradient(90deg,rgba(255,212,121,.07),transparent);padding:10px 12px;margin:6px 0}
+.story-sum-h{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);letter-spacing:.08em;
+  color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+.story-sum-b{font-size:var(--fs-sm);line-height:1.75;color:var(--txt-2)}
+.story-panel{border:1px solid var(--line-1);border-left:3px solid var(--accent);border-radius:2px;
+  background:var(--bg-2);padding:10px 12px;margin:8px 0}
+.story-panel-h{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);letter-spacing:.08em;
+  color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+.story-panel-b{font-size:var(--fs-xs);line-height:1.85;color:var(--txt-3);font-family:var(--font-mono,monospace)}
+.story-think{border:1px dashed var(--line-1);border-radius:2px;padding:6px 10px;margin:6px 0;
+  font-size:var(--fs-xs);color:var(--txt-3)}
+.story-think summary{cursor:pointer;color:var(--violet);list-style:none;display:flex;align-items:center;gap:6px}
+.story-think summary::-webkit-details-marker{display:none}
+.story-think[open] summary{margin-bottom:6px}

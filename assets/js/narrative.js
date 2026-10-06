@@ -86,6 +86,14 @@ ES.narrative = (function () {
         return '<div class="story-sys">' + U.icon('terminal', 'icon-xs') + '<div>' + b.text + '</div></div>';
       case 'chapter':
         return '<div class="story-sys" style="border-style:solid;border-left:3px solid var(--gold);background:linear-gradient(90deg,rgba(255,212,121,.1),transparent)">' + U.icon('scroll', 'icon-xs') + '<div><b>' + U.esc(b.text) + '</b></div></div>';
+      case 'sum':
+        return '<div class="story-sum"><div class="story-sum-h">' + U.icon('list', 'icon-xs') + '事件结算</div><div class="story-sum-b">' + b.text + '</div></div>';
+      case 'panel':
+        return '<div class="story-panel"><div class="story-panel-h">' + U.icon('grid', 'icon-xs') + U.esc(b.title || '职业面板') + '</div><div class="story-panel-b">' + b.text + '</div></div>';
+      case 'think':
+        return '<details class="story-think"><summary>' + U.icon('mind', 'icon-xs') + '模型推演（点击展开）</summary><div>' + b.text + '</div></details>';
+      case 'ai':
+        return '<div class="story-ai">' + b.text + '</div>';
       case 'broadcast':
         return '<div class="story-sys" style="border-left:3px solid var(--red)">' + U.icon('video', 'icon-xs') + '<div>' + b.text + '</div></div>';
       default:
@@ -221,6 +229,22 @@ ES.narrative = (function () {
       });
     }
     U.$('#choice-hint').textContent = '按数字键 1-' + Math.min(9, choices.length) + ' 快速选择';
+  }
+
+  /* AI 模式下的选择：先做规则判定，再把结果交给模型叙事 */
+  function aiChoose(c) {
+    if (busy) return;
+    disableChoices(true);
+    if (!c.check) return aiTurn(c.label);
+    busy = true;
+    setGen('判定中 · ' + (c.check.tag || '判定'), true);
+    return rollCheck(c.check).then(function (res) {
+      aiPendingFact = c.label + ' —— ' + res.label + '（' + res.attrName + ' ' + res.attrValue + ' vs 成功线 ' + res.dc + '，掷出 ' + res.roll + '）；剧情必须按这个结果写。';
+      return showDiceDialog(res).then(function () {
+        busy = false;
+        return aiTurn(c.label + '（判定结果：' + res.verdict + '）');
+      });
+    });
   }
 
   /* ══════════ 自由行动提示词 ══════════ */
@@ -522,11 +546,292 @@ ES.narrative = (function () {
     }
   }
 
+  /* ══════════ AI 剧情引擎（主叙事线 · 真实 API） ══════════ */
+  const AI_HISTORY_MAX = 16;
+  let aiHistory = [];
+  let aiBusy = false;
+  let aiPendingFact = null;
+
+  function aiOn() { return !!(ES.api && ES.api.isEnabled && ES.api.isEnabled()); }
+  function engineName() {
+    if (!aiOn()) return '叙事引擎 · 本地推演';
+    const c = ES.api.config();
+    return '叙事引擎 · ' + (ES.api.mode && ES.api.mode() === 'dual' ? '双 API' : 'AI') + ' · ' + (c.primary.model || '未命名模型');
+  }
+  function refreshEngineTag() {
+    const el = U.$('#story-mode-tag');
+    if (!el) return;
+    el.textContent = engineName();
+    el.setAttribute('data-tone', aiOn() ? 'gold' : 'cyan');
+  }
+  function resetAiSession() { aiHistory = []; aiPendingFact = null; }
+
+  /* ── 职业面板（注入提示词 + 回合末尾快照，对应截图里的「职业面板」） ── */
+  function panelLines(s) {
+    const pos = ES.state.positionOf(s);
+    const L = s.club && s.club.lineup;
+    const lvl = ES.state.level(ES.state.ovr(s));
+    const line = [];
+    line.push('★ 职业面板 · ' + s.time.year + ' 年 ' + s.time.month + ' 月（' + (s.time.seasonLabel || ('S' + s.time.season)) + ' · ' + s.time.phase + '）');
+    const diffName = (function () {
+      const d = s.difficulty;
+      if (!d) return '标准';
+      if (typeof d === 'object') return d.name || '标准';
+      const f = (D.DIFFICULTIES || []).filter(function (x) { return x.id === d; })[0];
+      return f ? f.name : String(d);
+    })();
+    line.push('· ' + s.profile.name + '（ID: ' + s.profile.tag + '）｜' + s.profile.gender + ' · ' + s.profile.age + ' 岁｜' + diffName + '难度');
+    line.push('· 总评 ' + ES.state.ovr(s) + '（' + lvl.name + '）｜位置 ' + pos.name + '｜体能 ' + Math.round(s.attrs.stamina) + '/100');
+    line.push('· 竞技状态 ' + Math.round(s.res.condition) + '/100 ｜ 手部健康 ' + Math.round(s.res.hand) + '/100 ｜ 伤病风险 ' + Math.round(s.res.injury) + '/100');
+    line.push('· 资金 ' + Math.round(s.res.money) + ' 元 ｜ 粉丝 ' + Math.round(s.res.fans) + ' ｜ 名声 ' + Math.round(s.special.fame) + ' ｜ 舆论热度 ' + Math.round(s.special.heat));
+    line.push('· 属性：' + D.ATTRS.map(function (a) { return a.name + Math.round(s.attrs[a.k]); }).join(' ｜ '));
+    if (s.club) line.push('· ' + s.club.name + '（' + s.club.short + '）· ' + s.club.league + ' ｜ 队内定位：' + ES.state.lineupText(s) + ' ｜ 教练信任 ' + Math.round(s.special.coachTrust));
+    const rels = s.relations.slice().sort(function (a, b) { return b.affection - a.affection; });
+    if (rels.length) line.push('· 关系：' + rels.slice(0, 6).map(function (r) { return r.name + ' +' + Math.round(r.affection); }).join(' ｜ '));
+    const low = rels.slice(-3).filter(function (r) { return r.affection < 45; });
+    if (low.length) line.push('· 暗流：' + low.map(function (r) { return r.name + '（好感 ' + Math.round(r.affection) + '，' + r.role + '）'; }).join('；'));
+    const q = (s.quests || []).filter(function (x) { return !x.done; }).slice(0, 3);
+    if (q.length) line.push('· 待办：' + q.map(function (x) { return x.name + '（' + x.progress + '/' + x.target + '，' + x.deadline + ' 天内）'; }).join('；'));
+    const logs = (s.stats.log || []).slice(-4);
+    if (logs.length) line.push('· 近期：' + logs.map(function (x) { return x.text; }).join(' → '));
+    return line;
+  }
+  function buildStateDigest(s) { return panelLines(s).join('\n'); }
+
+  /* ── 世界上下文（按当前处境挑选，控制 token） ── */
+  function buildWorldContext(s) {
+    const out = [];
+    out.push('【世界】现实向《无畏契约》VCT 电竞世界。当前 ' + s.time.year + ' 年 ' + s.time.month + ' 月，' + (s.time.seasonLabel || '') + ' · ' + s.time.phase + '。');
+    if (D.VERSIONS && D.VERSIONS.length) {
+      const v = D.VERSIONS.filter(function (x) { return x.year <= s.time.year; }).slice(-1)[0];
+      if (v) out.push('【版本】' + v.name + '：' + (v.note || v.desc || ''));
+    }
+    if (s.club) {
+      out.push('【俱乐部】' + s.club.name + '（' + s.club.short + '）· ' + s.club.region + ' ' + s.club.tier + ' 级 · ' + s.club.city + '。风格：' + s.club.style + '。荣誉：' + (s.club.honors || '—'));
+      out.push('【阵容】' + (s.club.rosterNote || '') + '：' + (s.club.roster || []).join('、') + '。' + (s.club.lineup ? '当前首发：' + s.club.lineup.current.join('、') + '；玩家定位：' + ES.state.lineupText(s) : ''));
+      if (s.club.line) out.push('【队内张力】' + s.club.line);
+    }
+    if (ES.state.monthSchedule) {
+      const sch = ES.state.monthSchedule(s, s.time.month);
+      if (sch.length) out.push('【本月赛程】' + sch.map(function (e) { return e.day + ' 日 ' + e.text; }).join('；'));
+      const nm = ES.state.nextMatch ? ES.state.nextMatch(s) : null;
+      if (nm) out.push('【下一场比赛】' + nm.text + '（' + nm.inDays + ' 天后，' + nm.month + ' 月 ' + nm.day + ' 日）；剧情与训练安排必须与赛程吻合。');
+    }
+    const rels = s.relations.slice().sort(function (a, b) { return b.affection - a.affection; }).slice(0, 8);
+    if (rels.length) out.push('【关键人物】' + rels.map(function (r) { return r.name + '（' + r.role + '，好感 ' + Math.round(r.affection) + '）'; }).join('；'));
+    out.push('【当前定位】' + ES.state.positionOf(s).name + '；总评 ' + ES.state.ovr(s) + '。');
+    return out.join('\n');
+  }
+
+  /* ── 输出契约（标签协议） ── */
+  function storySystemPrompt(s) {
+    return [
+      '你是一款现实向《无畏契约》职业选手人生模拟器的剧情引擎。你负责生成**具体、可读的中文剧情**，并让世界状态随剧情推进。',
+      '',
+      '输出格式（严格遵守，标签外不要写任何解释）：',
+      '<thinking>一到三句内部推演：这一段要推进什么、谁在场、玩家行为会有什么代价。玩家可展开查看。</thinking>',
+      '<maintext>剧情正文。350—800 字，中文，第二人称或第三人称皆可。必须有具体场景、动作、对话与细节（时间、地点、人物、数据、对话原话）。不要写成选项说明，不要把数值写进正文。</maintext>',
+      '<sum>事件结算，逐条列出这段剧情造成的可验证后果（含具体数值），每条一行。必须与 <vars> 一致。</sum>',
+      '<option>每个选项一行，格式：选项文本 | risk:safe|normal|high | check:属性:成功线:判定名 | 一句话说明这个选项的做法与代价</option>',
+      '<option>…（3—5 个，不要替玩家做决定，不要给出「全都做」的选项）</option>',
+      '<vars>合法 JSON，只写发生变化的部分。</vars>',
+      '',
+      '可用属性键：' + D.ATTRS.map(function (a) { return a.k + '（' + a.name + '）'; }).join('、'),
+      'vars 结构示例：{"time":{"advanceDays":3},"attrs":{"aim":1,"gameSense":2},"res":{"condition":-6,"hand":-2},"special":{"coachTrust":8,"fame":3},"fans":120,"money":-2000,"rel":{"书呆":2},"flags":{"了解战术":true}}',
+      '',
+      '硬性规则：',
+      '1. 日期只能前进，绝不回退；只有当剧情真的经过了时间（训练数日、休赛期、出差、等待）才写 time.advanceDays，一两天的小事不要推进日期。',
+      '2. 数值变化要克制：属性 ±1~3，关系 ±2~8，金钱按现实量级（电竞选手月薪数万到数十万），状态/健康 ±3~15。',
+      '3. 尊重现实 VCT 设定：俱乐部、赛制（13 分制、加时）、地图与特工名称都要真实；现实选手只用其比赛 ID 与公开赛场形象，不涉及私生活；虚构配角可用中文名。',
+      '4. 玩家是 17—19 岁的年轻选手，起点低、资源少；不要无理由地给他大赛冠军或顶级合同。',
+      '5. 判定的成败由系统给出（见【判定结果】）；有判定时，剧情必须体现该结果，不要自行改变成败。',
+      '6. 每次回复必须包含 <maintext> 与至少 3 个 <option>。',
+      '',
+      '<文风>（必须遵守，来源：融合预设文风规则）',
+      (D.STORY_STYLE || []).join('\n'),
+      '</文风>',
+      '',
+      '<选项规则>',
+      (D.OPTION_RULES || []).join('\n'),
+      '</选项规则>',
+      '',
+      '<选项格式>每行一个 <option>，用竖线分隔：选项文本 | risk:safe|normal|high | check:属性:成功线:判定名 | 一句话说明做法与代价</option>',
+      '（判定属性只能是：' + D.ATTRS.map(function (a) { return a.name; }).join('、') + '；没有判定就省略 check 段。）'
+    ].join('\n');
+  }
+
+  /* ── 组装 messages ── */
+  function buildStoryMessages(s, actionText, opts) {
+    opts = opts || {};
+    const msgs = [{ role: 'system', content: storySystemPrompt(s) }];
+    msgs.push({ role: 'system', content: buildWorldContext(s) });
+    msgs.push({ role: 'system', content: '【当前状态】\n' + buildStateDigest(s) });
+    if (aiPendingFact) { msgs.push({ role: 'system', content: '【判定结果】' + aiPendingFact }); aiPendingFact = null; }
+    aiHistory.slice(-AI_HISTORY_MAX).forEach(function (m) { msgs.push(m); });
+    if (opts.opening) {
+      msgs.push({ role: 'user', content: '（开局）请顺着刚发生的情境继续推进剧情：给出玩家现在可以做的一批具体行动。' });
+      return msgs;
+    }
+    msgs.push({ role: 'user', content: actionText ? ('我的行动：' + actionText) : '（继续推进，不要替我决定行动）' });
+    return msgs;
+  }
+
+  /* ── 流式正文容器 ── */
+  function esc2html(txt) {
+    return U.esc(String(txt || ''))
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/\n{2,}/g, '</p><p class="story-p">')
+      .replace(/\n/g, '<br>');
+  }
+  function appendLiveProse() {
+    const host = U.$('#story-scroll');
+    if (!host) return { set: function () {}, done: function () {} };
+    const holder = document.createElement('div');
+    holder.style.display = 'contents';
+    holder.innerHTML = '<p class="story-p live"></p>';
+    host.appendChild(holder);
+    const p = holder.querySelector('p');
+    let last = 0;
+    return {
+      set: function (txt) {
+        const now = Date.now();
+        if (now - last < 60) return;   /* 流式节流 */
+        last = now;
+        p.innerHTML = esc2html(txt);
+        scrollBottom();
+      },
+      done: function (txt) {
+        p.classList.remove('live');
+        p.innerHTML = esc2html(txt || '（模型没有返回正文）');
+        scrollBottom();
+      }
+    };
+  }
+
+  /* ── 生成一回合（AI 通道） ── */
+  function aiTurn(actionText, opts) {
+    opts = opts || {};
+    if (aiBusy) return Promise.resolve();
+    if (!aiOn()) return nextSceneLocal(opts.forceId);
+    aiBusy = true; busy = true; disableChoices(true);
+    setGen('AI 生成剧情中', true);
+    if (actionText && !opts.opening) {
+      const host = U.$('#story-scroll');
+      if (host) {
+        const echo = document.createElement('div');
+        echo.className = 'chosen-line';
+        echo.innerHTML = U.icon('target', 'icon-sm') + '<span>你的行动：<b>' + U.esc(actionText) + '</b></span>';
+        host.appendChild(echo); scrollBottom();
+      }
+    }
+    const messages = buildStoryMessages(S, actionText, opts);
+    const parsed = { thinking: '', maintext: '', options: [], sum: '', varsRaw: '', varsCommands: { merge: {} }, unknown: {} };
+    const parser = new ES.tavern.StreamTagParser(ES.tavern.DEFAULT_TAGS, ES.tavern.DEFAULT_OPAQUE);
+    const live = appendLiveProse();
+    const started = Date.now();
+    return ES.api.chat({
+      task: 'story',
+      messages: messages,
+      onDelta: function (chunk) {
+        ES.tavern.aggregate(parser.feed(chunk), parsed);
+        live.set(parsed.maintext);
+        setGen('AI 生成剧情中 · ' + String(parsed.maintext || '').length + ' 字', true);
+      }
+    }).then(function (res) {
+      if (res && res.local) {
+        /* API 不可用 → 回退本地推演（api 层已给出提示） */
+        aiBusy = false; busy = false; disableChoices(false);
+        live.done(parsed.maintext || '（API 不可用，已切回本地推演）');
+        refreshEngineTag();
+        return nextSceneLocal(opts.forceId);
+      }
+      live.done(parsed.maintext);
+      const blocks = [];
+      if (parsed.thinking) blocks.push({ t: 'think', text: esc2html(parsed.thinking) });
+      if (parsed.sum) blocks.push({ t: 'sum', text: esc2html(parsed.sum).replace(/\n/g, '<br>') });
+      const applied = ES.state.applyStoryVars(S, parsed.varsCommands.merge);
+      if (applied && applied.notes.length) {
+        blocks.push({ t: 'sum', text: '<b>引擎结算</b><br>' + applied.notes.map(function (n) { return '· ' + U.esc(n); }).join('<br>') });
+      }
+      blocks.push({ t: 'panel', title: '职业面板 · ' + S.time.year + ' 年 ' + S.time.month + ' 月', text: panelLines(S).slice(1).map(function (x) { return U.esc(x.replace(/^· /, '')); }).join('<br>') });
+      if (applied && applied.advanced > 0) {
+        ES.audio.play('levelup');
+        U.toast({ tone: 'info', icon: 'calendar', title: '剧情推进了 ' + applied.advanced + ' 天', msg: applied.from.month + ' 月 ' + applied.from.day + ' 日 → ' + applied.to.month + ' 月 ' + applied.to.day + ' 日 · ' + S.time.phase, duration: 7000 });
+      }
+      aiHistory.push({ role: 'user', content: actionText || '（继续推进）' });
+      aiHistory.push({ role: 'assistant', content: '<maintext>' + (parsed.maintext || '') + '</maintext>' + (parsed.sum ? '<sum>' + parsed.sum + '</sum>' : '') });
+      if (aiHistory.length > AI_HISTORY_MAX * 2) aiHistory = aiHistory.slice(-AI_HISTORY_MAX * 2);
+      ES.state.pushLog(S, 'story', (parsed.maintext || '').slice(0, 60));
+      if (ES.tavern && ES.tavern.captureBlocks) { try { ES.tavern.captureBlocks([{ t: 'narr', text: parsed.maintext || '' }].concat(blocks)); } catch (e) {} }
+      const setCh = function () { setChoices(parsed.options); };
+      const finish = function () {
+        setCh();
+        if (ES.app.refreshUI) ES.app.refreshUI();
+        busy = false; aiBusy = false; disableChoices(false);
+        setGen('待命', false);
+        U.announce('AI 已生成剧情，共 ' + (parsed.options || []).length + ' 个可选行动。');
+      };
+      return appendBlocks(blocks).then(finish);
+    }).catch(function (err) {
+      const msg = ES.api.friendlyError ? ES.api.friendlyError(err) : String(err && err.message || err);
+      appendBlocks([{ t: 'sys', text: '<b>生成失败</b>：' + U.esc(msg) }]);
+      busy = false; aiBusy = false; disableChoices(false); setGen('待命', false);
+      refreshEngineTag();
+    });
+  }
+
+  /* ── 选项文本 → 选项对象（同时供酒馆层复用） ── */
+  function parseOptionLine(line) {
+    const s = String(line == null ? '' : line).trim().replace(/^[-•*\d.、)\s]+/, '');
+    if (!s) return null;
+    if (s.charAt(0) === '{') {
+      try {
+        const o = JSON.parse(s);
+        if (o && o.label) return { label: String(o.label), desc: String(o.desc || ''), risk: o.risk || 'normal', check: o.check || null, tag: o.tag || '' };
+      } catch (e) { /* 非 JSON，按管道解析 */ }
+    }
+    const parts = s.split('|').map(function (x) { return x.trim(); }).filter(Boolean);
+    const out = { label: parts[0] || s, desc: '', risk: 'normal', check: null, tag: '' };
+    parts.slice(1).forEach(function (p) {
+      let m = /^risk\s*[:=]\s*(safe|normal|high)$/i.exec(p);
+      if (m) { out.risk = m[1].toLowerCase(); return; }
+      m = /^check\s*[:=]\s*([^:=]+)\s*[:=]\s*(\d+)\s*[:=]?\s*(.*)$/.exec(p);
+      if (m) {
+        const key = ES.state.attrKeyOf ? ES.state.attrKeyOf(m[1].trim()) : m[1].trim();
+        const a = D.ATTRS.filter(function (x) { return x.k === key || x.name === m[1].trim(); })[0];
+        out.check = { attr: a ? a.k : key, dc: parseInt(m[2], 10), tag: (m[3] || (a ? a.name : key)), kind: 'check' };
+        return;
+      }
+      m = /^tag\s*[:=]\s*(.+)$/i.exec(p);
+      if (m) { out.tag = m[1]; return; }
+      if (!out.desc) out.desc = p;
+    });
+    return out;
+  }
+
+  /** 用模型给出的选项替换当前选项（酒馆层与叙事层共用） */
+  function setChoices(lines) {
+    const list = (Array.isArray(lines) ? lines : String(lines || '').split('\n'))
+      .map(parseOptionLine).filter(Boolean);
+    if (!list.length) return false;
+    current = current || { id: 'ai', chapter: { id: S.scene && S.scene.chapterId, name: 'AI 剧情', index: 'AI' }, scene: 'AI 剧情', choices: [], days: 1, next: null };
+    current.choices = list;
+    renderChoices(list);
+    return true;
+  }
+
+  /* ── 本地推演的入口别名（AI 失败时回退用） ── */
+  function nextSceneLocal(forceId) {
+    const nodeId = forceId || (current && current.next) || null;
+    if (nodeId && D.SCENES[nodeId]) return renderNode(nodeId);
+    return randomInterlude();
+  }
   /* ══════════ 抉择处理 ══════════ */
   function choose(index) {
     if (busy || !current) return;
     const c = current.choices[index];
     if (!c) return;
+    if (aiOn()) return aiChoose(c);
     busy = true;
     disableChoices(true);
     ES.audio.play('click');
@@ -659,9 +964,8 @@ ES.narrative = (function () {
 
   /* ══════════ 场景推进 ══════════ */
   function nextScene(forceId) {
-    const nodeId = forceId || (current && current.next) || null;
-    if (nodeId && D.SCENES[nodeId]) return renderNode(nodeId);
-    return randomInterlude();
+    if (aiOn() && !forceId) return aiTurn(null);
+    return nextSceneLocal(forceId);
   }
 
   function renderNode(nodeId) {
@@ -673,6 +977,11 @@ ES.narrative = (function () {
     const withChapter = [{ t: 'chapter', text: node.chapter.index + ' · ' + node.chapter.name + ' —— ' + node.scene }].concat(node.lines);
     setGen('生成场景中', true);
     return appendBlocks(withChapter).then(function () {
+      if (aiOn()) {
+        /* AI 模式：把开场情境交给模型，由它续写并给出选项 */
+        aiHistory.push({ role: 'assistant', content: '<maintext>' + node.lines.map(function (l) { return (l.who ? l.who + '：' : '') + String(l.text || '').replace(/<[^>]+>/g, ''); }).join('\n') + '</maintext>' });
+        return aiTurn(null, { opening: true });
+      }
       renderChoices(node.choices);
       setGen('待命', false);
       U.$$('#choice-list .choice').forEach(function (b, i) { b.style.animation = 'stepIn .32s ' + (i * 0.05) + 's both'; });
@@ -909,6 +1218,7 @@ ES.narrative = (function () {
   }
 
   function freeAction(text) {
+    if (aiOn()) return aiTurn(text);
     if (wantsPromotion(text)) {
       ES.state.pushLog(S, 'action', '主动争取首发：' + text);
       return promotionScene(true);
@@ -1114,6 +1424,8 @@ ES.narrative = (function () {
   }
 
   function start() {
+    refreshEngineTag();
+    resetAiSession();
     if (!S) return;
     const nodeId = S.scene.nodeId || 'ch1_tryout';
     const openingChoice = S.scene.openingChoice;
@@ -1155,6 +1467,9 @@ ES.narrative = (function () {
     afterSettle: afterSettle, banner: banner, bindFreeInput: bindFreeInput, randomInterlude: randomInterlude,
     setGen: setGen, get current() { return current; }, finishCareer: finishCareer,
     currentChoices: function () { return current ? (current.choices || []) : []; },
+    aiOn: aiOn, aiTurn: aiTurn, engineName: engineName, refreshEngineTag: refreshEngineTag,
+    resetAiSession: resetAiSession, setChoices: setChoices, parseOptionLine: parseOptionLine,
+    buildStateDigest: buildStateDigest, buildWorldContext: buildWorldContext,
     promotionReady: promotionReady, promotionScene: promotionScene,
     busyNow: function () { return !!busy; },
     applyNode: function (id) { return renderNode(id); }

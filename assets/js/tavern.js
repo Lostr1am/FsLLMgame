@@ -372,13 +372,15 @@ ES.tavern = (function () {
     return {
       id: 'preset-local', name: '本地推演默认预设', description: 'SillyTavern 兼容字段（temp_openai / prompt_order / prompts…）',
       settings: {
-        temp_openai: 0.85, top_p_openai: 0.92, top_k_openai: 0, freq_pen_openai: 0, pres_pen_openai: 0,
+        temp_openai: 0.95, top_p_openai: 0.95, top_k_openai: 0, freq_pen_openai: 0, pres_pen_openai: 0.3,
         openai_max_context: 4096, openai_max_tokens: 1024, stream_openai: true,
         chat_completion_source: 'local-engine', openai_model: 'apex-corridor-local',
         main: '你是《无畏契约》职业选手人生模拟器的「联盟主持」。玩家扮演 {{user}}，你是整个职业圈的裁决者与旁白。' +
           '必须遵守随附规则书：属性与总评按位置加权计算；一切判定掷骰并公开修正明细；NPC 出现在其合理位置；选手以比赛 ID 出现。' +
           '每次回复推进剧情并输出面板变化。',
         jailbreak: '记住：不作弊，不替玩家做选择，不虚构现实选手的私生活。「高自由 · 快节奏 · 永不作弊」。',
+        style: (D.STORY_STYLE || []).join('\n'),
+        option_rules: (D.OPTION_RULES || []).join('\n'),
         prompts: [], prompt_order: DEFAULT_PROMPT_ORDER.map(function (p) { return Object.assign({ enabled: true }, p); })
       }
     };
@@ -775,9 +777,17 @@ ES.tavern = (function () {
     });
   }
   function finishApiFloor(floor) {
-    applyProjectedVars(floor.parsed.varsCommands.merge);
+    const applied = ES.state.applyStoryVars
+      ? ES.state.applyStoryVars(S, floor.parsed.varsCommands.merge)
+      : (applyProjectedVars(floor.parsed.varsCommands.merge), null);
+    if (applied && applied.notes && applied.notes.length) floor.meta.applied = applied.notes;
+    if (applied && applied.advanced > 0) {
+      U.toast({ tone: 'info', icon: 'calendar', title: '剧情推进了 ' + applied.advanced + ' 天', msg: applied.from.month + ' 月 ' + applied.from.day + ' 日 → ' + applied.to.month + ' 月 ' + applied.to.day + ' 日 · ' + S.time.phase, duration: 6000 });
+    }
     floor.variablesAfter = snapshot();
     floor.options = floor.parsed.options || [];
+    /* 把模型给出的选项交给叙事层，酒馆侧栏与主界面都能点 */
+    if (ES.narrative.setChoices) ES.narrative.setChoices(floor.options);
     floor.meta.ovr = ES.state.ovr(S);
     streaming = false;
     save();
@@ -1711,6 +1721,7 @@ ES.tavern = (function () {
     }
     U.$('#btn-api-save').onclick = function () {
       collect(); ES.api.save(); renderSide(); U.closeModal('modal-tavern');
+      if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
       U.toast({
         tone: ES.api.isEnabled() ? 'success' : 'info', icon: 'link',
         title: ES.api.isEnabled() ? 'API 已启用（' + (curMode === 'dual' ? '双 API' : '单 API') + '）' : '已切回本地引擎',

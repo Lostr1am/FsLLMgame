@@ -1146,34 +1146,26 @@ ES.panels = (function () {
     const month = ((S.time.month - 1 + calOffset) % 12 + 12) % 12 + 1;
     U.$('#calendar-sub').textContent = (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year + ' 年 ' + month + ' 月 · ' + S.time.phase;
     const head = ['一', '二', '三', '四', '五', '六', '日'].map(function (d) { return '<div class="cal-head">' + d + '</div>'; }).join('');
-    const rnd = U.makeRng(month * 317 + S.time.season);
+    /* 只呈现真实发生/已排定的事：履历日志、任务截止、合同到期、比赛记录 */
+    const events = calendarEvents(month);
     let cells = '';
-    const evPool = ['联赛比赛', '训练赛', '媒体采访', '品牌拍摄', '休整日', '战术会议', '版本更新', '直播日'];
-    const firstDow = (month * 3 + S.time.year) % 7;
+    const firstDow = (new Date(S.time.year, month - 1, 1).getDay() + 6) % 7;   /* 0=周一 */
     for (let i = 0; i < firstDow; i++) cells += '<div></div>';
     for (let d = 1; d <= 28; d++) {
-      const r = rnd();
-      let ev = null, type = 'rest';
-      if (d % 7 === 3) { ev = '联赛比赛'; type = 'match'; }
-      else if (d % 7 === 6) { ev = '休整日'; type = 'rest'; }
-      else if (r > 0.72) { ev = '媒体采访'; type = 'media'; }
-      else if (r > 0.6) { ev = '战术会议'; type = 'media'; }
-      else if (r > 0.5) { ev = '版本更新'; type = 'critical'; }
-      if (month === S.time.month && d === S.time.day) type = 'critical';
+      const evs = events[d] || [];
+      const ev = evs.length ? evs[0].text : '';
+      const type = evs.length ? evs[0].tone : 'rest';
       const isToday = month === S.time.month && d === S.time.day;
-      cells += '<div class="cal-cell' + (isToday ? ' is-today' : '') + '" data-ev="' + type + '" data-day="' + d + '" data-tip="' + (ev || evPool[Math.floor(r * evPool.length)]) + '">' +
-        '<span class="d">' + U.pad2(d) + '</span><span class="ev">' + (ev || '') + '</span></div>';
+      const tip = evs.length ? evs.map(function (e) { return e.text; }).join(' / ') : (isToday ? '今天 · 暂无记录' : '无记录');
+      cells += '<div class="cal-cell' + (isToday ? ' is-today' : '') + (evs.length ? ' has-ev' : '') + '" data-ev="' + type + '" data-day="' + d + '" data-tip="' + U.esc(tip) + '">' +
+        '<span class="d">' + U.pad2(d) + '</span><span class="ev">' + U.esc(ev.length > 6 ? ev.slice(0, 6) + '…' : ev) + '</span></div>';
     }
     U.$('#calendar-grid').innerHTML = head + cells;
 
     const list = [];
-    for (let d = 1; d <= 28; d++) {
-      const r2 = U.makeRng(month * 977 + d * 13)();
-      if (d % 7 === 3) list.push({ d: d, t: '联赛比赛 · 常规赛第 ' + Math.ceil(d / 7) + ' 周', tone: 'cyan', icon: 'sword' });
-      else if (r2 > 0.78) list.push({ d: d, t: '官方媒体采访（俱乐部安排）', tone: 'violet', icon: 'mic' });
-      else if (r2 > 0.66) list.push({ d: d, t: '版本更新 · 需重新适应特工池', tone: 'gold', icon: 'layers' });
-      else if (r2 > 0.56) list.push({ d: d, t: '战术复盘会议', tone: 'cyan', icon: 'cpu' });
-    }
+    Object.keys(events).map(Number).sort(function (a, b) { return a - b; }).forEach(function (d) {
+      events[d].forEach(function (e) { list.push({ d: d, t: e.text, tone: e.tone, icon: e.icon, kind: e.kind }); });
+    });
     U.$('#calendar-list').innerHTML = list.length ? list.map(function (it) {
       return '<div class="lrow" style="cursor:default">' +
         '<span class="lrow-ava">' + U.pad2(it.d) + '</span>' +
@@ -1181,6 +1173,54 @@ ES.panels = (function () {
         '<span class="lrow-sub">' + month + ' 月 ' + it.d + ' 日 · 预计消耗 1 回合</span></span>' +
         '<span class="lrow-side"><span class="tag" data-tone="' + it.tone + '">' + (it.tone === 'gold' ? '关键' : '日程') + '</span></span></div>';
     }).join('') : '<div class="empty">' + U.icon('calendar') + '<div class="empty-title">本月暂无固定日程</div></div>';
+  }
+
+  /** 把「剧情里真实发生的事」汇总到日历：履历日志 / 任务截止 / 合同到期 / 比赛记录 */
+  function calendarEvents(month) {
+    const map = {};
+    /* 真实赛程：联赛比赛日 / 大师赛 / 全球冠军赛 / 转会窗 / 颁奖（规则书 18.2） */
+    (ES.state.monthSchedule ? ES.state.monthSchedule(S, month) : []).forEach(function (e) {
+      (map[e.day] = map[e.day] || []).push({ text: e.text, tone: e.tone, icon: e.icon, kind: e.kind, scheduled: true });
+    });
+    const push = function (d, e) {
+      if (!d || d < 1 || d > 28) return;
+      map[d] = map[d] || [];
+      if (!map[d].some(function (x) { return x.text === e.text; })) map[d].push(e);
+    };
+    /* 履历日志（带日期） */
+    const KIND = {
+      choice: { tone: 'cyan', icon: 'target' }, story: { tone: 'violet', icon: 'scroll' },
+      match: { tone: 'gold', icon: 'sword' }, train: { tone: 'cyan', icon: 'target' },
+      club: { tone: 'gold', icon: 'briefcase' }, deal: { tone: 'gold', icon: 'briefcase' },
+      media: { tone: 'violet', icon: 'mic' }, action: { tone: 'cyan', icon: 'terminal' },
+      injury: { tone: 'red', icon: 'heart' }, milestone: { tone: 'gold', icon: 'medal' }
+    };
+    (S.log || []).forEach(function (it) {
+      const m = /(\d{2})月(\d{2})日/.exec(String(it.time || ''));
+      if (!m) return;
+      const mm = parseInt(m[1], 10), dd = parseInt(m[2], 10);
+      if (mm !== month) return;
+      const k = KIND[it.kind] || { tone: 'cyan', icon: 'scroll' };
+      push(dd, { text: String(it.text || '').slice(0, 28), tone: k.tone, icon: k.icon, kind: it.kind });
+    });
+    /* 比赛记录 */
+    ((S.stats && S.stats.seasonRows) || []).forEach(function () {});
+    /* 任务截止（相对今天的天数） */
+    (S.quests || []).filter(function (q) { return !q.done && q.deadline > 0; }).forEach(function (q) {
+      const target = shiftDate(S.time, Math.min(q.deadline, 120));
+      if (target.month === month) push(target.day, { text: '截止：' + q.name, tone: 'red', icon: 'clock', kind: 'deadline' });
+    });
+    /* 合同到期 */
+    const ct = S.club && S.club.contract;
+    if (ct && ct.endYear && ct.endMonth === month && ct.endYear === S.time.year) {
+      push(28, { text: '合同到期（' + S.club.short + '）', tone: 'gold', icon: 'scroll', kind: 'contract' });
+    }
+    return map;
+  }
+  function shiftDate(time, days) {
+    let y = time.year, m = time.month, d = time.day + days;
+    while (d > 28) { d -= 28; m++; if (m > 12) { m = 1; y++; } }
+    return { year: y, month: m, day: d };
   }
 
   /* ══════════ 舆论模态 ══════════ */
