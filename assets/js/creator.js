@@ -705,13 +705,13 @@ ES.creator = (function () {
       : ct.name + '，' + t.year + ' 年 ' + U.pad2(t.month) + ' 月。' + t.quote + '你是一个' + (origin() ? origin().name : '普通少年') + '，主位置' + pos.name + '，' +
       (c ? '手里拿着的是一份来自 ' + c.name + ' 的试训邀请' : '还没有任何一家俱乐部回复你') + '。';
     U.$('#opening-lead').textContent = lead;
-    const node = D.SCENES[t.startNode] || D.SCENES.ch1_tryout;
-    const blocks = (node.lines || []).map(function (l) {
-      if (l.t === 'speak') return '<div class="story-line story-say"><span class="who">' + U.esc(l.who) + '</span>' + U.esc(l.text) + '</div>';
-      if (l.t === 'sys') return '<div class="story-line story-sys">' + l.text + '</div>';
-      return '<div class="story-line">' + U.esc(l.text) + '</div>';
-    }).join('');
-    U.$('#opening-story').innerHTML = blocks;
+    /* 预告：只给氛围与处境，完整序幕在进入游戏后播放（逐年不同） */
+    const node = D.SCENES[t.startNode];
+    U.$('#opening-story').innerHTML =
+      '<div class="story-line" style="opacity:.85">' + U.esc(t.tagline || '') + '</div>' +
+      '<div class="story-line" style="font-style:italic;opacity:.9">' + U.esc(t.quote || '') + '</div>' +
+      '<div class="tiny dim-2" style="margin-top:8px">' + U.icon('info', 'icon-xs') + ' 完整序幕将在进入游戏后展开：' + U.esc(node ? (node.chapter.name + ' · ' + node.scene) : '序章') + '</div>';
+    U.$('#opening-preview').innerHTML = node ? ('<div class="tiny dim-2">本序幕共 ' + (node.lines || []).length + ' 段，含 ' + (node.choices || []).length + ' 个开局抉择</div>') : '';
     U.$('#opening-choices').innerHTML = (node.choices || []).slice(0, 3).map(function (ch, i) {
       const check = ch.check
         ? '<span class="choice-check">' + U.icon('target', 'icon-xs') + U.esc(ch.check.tag || '') +

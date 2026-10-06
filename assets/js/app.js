@@ -12,8 +12,33 @@ const MOCK_STORY = [
   '<vars>{"time":{"advanceDays":7},"attrs":{"aim":2},"special":{"coachTrust":6},"res":{"condition":-6,"stamina":-1},"fans":80,"rel":{"书呆":2},"flags":{"scrimClutch":true}}</vars>'
 ].join('\n');
 
-function installMockStory() {
-  const canned = MOCK_STORY;
+/* 不合规模型：纯文本正文 + 编号选项，没有任何标签 */
+const MOCK_PLAIN = [
+  '训练室的空调坏了，屋里三十度。你把袖子挽到手肘，把今天的第三十组靶打完。',
+  '',
+  '「手别抖。」赵行舟不知什么时候站在你身后，手里端着一杯冰水，「你刚才那一组，前八发全在圈里，最后两发飘出去了。知道为什么吗？」',
+  '',
+  '你没说话。他知道你知道。',
+  '',
+  '「体能。」他把冰水放在桌上，「你的枪法没问题，是身体先垮了。明天开始，每天加四十分钟有氧。」',
+  '',
+  '1. 从明天开始按他说的加有氧，把体能补上',
+  '2. 先跟他争论：你觉得问题在鼠标握姿，不是体能',
+  '3. 答应加有氧，但同时提出想多打两场训练赛'
+].join('\n');
+/* 忽略 stream:true 的端点：整段 JSON 返回 */
+const MOCK_JSON_TEXT = [
+  '<maintext>比分 12:10，赛点局。你被留在残局 1v2。</maintext>',
+  '<maintext>对面两人从两侧同时压进来，你退了半步贴住箱子，先点掉左边那个，再转身扫死右边。屏幕上跳出「clutch」。</maintext>',
+  '<maintext>书呆在耳机里吼了一声，赵行舟在身后把战术板拍在桌上：「这波，你打对了。」</maintext>',
+  '<sum>· 残局 1v2 成功\n· 心态 +1，队友信任 +4\n· 时间推进 3 天</sum>',
+  '<option>趁手感热，加练一组残局 | risk:safe | 巩固状态</option>',
+  '<option>去找赵行舟复盘这波残局 | risk:safe | check:insight:12:悟性 | 把直觉变成方法</option>',
+  '<option>约队友吃夜宵，聊聊明天的对手 | risk:safe | 关系线</option>',
+  '<vars>{"time":{"advanceDays":3},"attrs":{"mentality":1},"special":{"teammateTrust":4}}</vars>'
+].join('\n');
+function installMockStory(mode) {
+  const canned = mode === 'plain' ? MOCK_PLAIN : mode === 'json' ? MOCK_JSON_TEXT : MOCK_STORY;
   const enc = function (s) { return new TextEncoder().encode(s); };
   window.fetch = function (url, opt) {
     const body = opt && opt.body ? JSON.parse(opt.body) : {};
@@ -620,6 +645,22 @@ ES.app = (function () {
             case 'broadcast': openBroadcast(); break;
             case 'tavern': setUiMode('tavern'); break;
             case 'api': setUiMode('tavern'); ES.tavern.openApi(); break;
+            case 'aimock3': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-plain-model' }) });
+              ES.api.save();
+              installMockStory('plain');
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              break;
+            }
+            case 'aimock4': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-nonstream-model' }) });
+              ES.api.save();
+              installMockStory('json');
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              break;
+            }
             case 'aimock': {
               ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-story-v1' }) });
               ES.api.save();

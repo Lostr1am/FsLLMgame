@@ -95,7 +95,11 @@ ES.api = (function () {
         if (json.error) { out.errors.push(json.error.message || 'API error'); return; }
         const ch = (json.choices || [])[0] || {};
         const d = ch.delta || ch.message || {};
-        const piece = d.content !== undefined ? d.content : (typeof ch.text === 'string' ? ch.text : '');
+        let piece = '';
+        if (typeof d.content === 'string') piece = d.content;
+        else if (typeof ch.text === 'string') piece = ch.text;
+        else if (typeof ch.message === 'object' && ch.message && typeof ch.message.content === 'string') piece = ch.message.content;
+        else if (typeof json.content === 'string') piece = json.content;
         if (piece) out.deltas.push(piece);
       } catch (e) { /* 忽略半包 */ }
     });
@@ -103,10 +107,33 @@ ES.api = (function () {
   }
   function extractText(json) {
     const ch = (json.choices || [])[0] || {};
-    if (ch.message && typeof ch.message.content === 'string') return ch.message.content;
-    if (typeof ch.text === 'string') return ch.text;
+    if (ch.message && typeof ch.message.content === 'string' && ch.message.content) return ch.message.content;
+    const d = ch.delta || {};
+    if (typeof d.content === 'string' && d.content) return d.content;
+    if (typeof ch.text === 'string' && ch.text) return ch.text;
     if (json.output_text) return json.output_text;
+    if (json.content) return typeof json.content === 'string' ? json.content : '';
     return '';
+  }
+
+  /** 把「非标准流式」的整段响应体尽量榨出文本：SSE 行 / 裸 JSON / 原样文本 */
+  function salvageText(raw) {
+    const s = String(raw || '');
+    if (!s.trim()) return '';
+    const parts = [];
+    s.split(/\r?\n/).forEach(function (line) {
+      const x = line.trim();
+      if (!x) return;
+      const payload = x.indexOf('data:') === 0 ? x.slice(5).trim() : x;
+      if (!payload || payload === '[DONE]') return;
+      if (payload.charAt(0) === '{') {
+        try { const p = extractText(JSON.parse(payload)); if (p) parts.push(p); return; } catch (e) { /* 非完整 JSON */ }
+      }
+      if (x.indexOf('data:') !== 0) parts.push(x);
+    });
+    if (parts.length) return parts.join('');
+    try { const p = extractText(JSON.parse(s)); if (p) return p; } catch (e) { /* 原样返回 */ }
+    return s;
   }
 
   /* ── 单次请求 ── */
@@ -139,6 +166,7 @@ ES.api = (function () {
     const timer = setTimeout(function () { ctrl.abort(); }, t.timeout || 90000);
     const started = Date.now();
     let full = '';
+    let rawAll = '';
     let buffer = '';
     const onDelta = (opts && opts.onDelta) || function () {};
     return fetch(urlFor(t), {
@@ -158,9 +186,15 @@ ES.api = (function () {
             tail.deltas.forEach(function (d) { full += d; onDelta(d); });
             if (tail.errors.length) throw new Error(tail.errors[0]);
             clearTimeout(timer);
+            if (full) return full;
+            /* 有些端点忽略 stream:true，直接返回整段 JSON 或纯文本 */
+            const salvaged = salvageText(rawAll);
+            if (salvaged) { onDelta(salvaged); return salvaged; }
             return full;
           }
-          buffer += dec.decode(r.value, { stream: true });
+          const _dec = dec.decode(r.value, { stream: true });
+          rawAll += _dec;
+          buffer += _dec;
           const ev = parseSseChunk(buffer);
           buffer = ev.rest;
           ev.deltas.forEach(function (d) { full += d; onDelta(d); });

@@ -705,75 +705,33 @@ ES.tavern = (function () {
     db.floors.push(floor);
     renderFloors();
 
-    if (ES.api && ES.api.isEnabled()) return generateViaApi(floor, text, opts);
+    if (ES.api && ES.api.isEnabled() && ES.narrative && ES.narrative.aiTurn) {
+      /* 统一引擎：一颗大脑、一份历史、一套选项（叙事模式与酒馆模式看到的是同一条剧情） */
+      streaming = true;
+      floor.meta.model = ES.api.config().primary.model;
+      const beforeOvr = ES.state.ovr(S);
+      return ES.narrative.aiTurn(text, { fromTavern: true }).then(function () {
+        streaming = false;
+        finishFloor(floor, beforeOvr, text, opts);
+      }).catch(function () { streaming = false; finishFloor(floor, beforeOvr, text, opts); });
+    }
     return generateViaLocal(floor, text, opts);
   }
 
   /* ── 通道 A：真实 API（主 API 跑剧情，次 API 跑 <sum>/<vars>） ── */
+  /* 旧通道保留为薄封装：统一委托叙事层引擎（历史/选项/变量单点） */
+  /* 统一引擎：酒馆层不再自己调 API，全部委托叙事层（同一历史 / 同一选项 / 同一变量） */
   function generateViaApi(floor, text, opts) {
-    const parser = new StreamTagParser(db.settings.tags, db.settings.opaqueTags);
-    floor.parsed = { thinking: '', maintext: '', options: [], sum: '', varsRaw: '', varsCommands: { merge: {} }, unknown: {} };
-    let buf = '';
-    const started = Date.now();
+    const beforeOvr = ES.state.ovr(S);
     streaming = true;
     floor.meta.model = ES.api.config().primary.model;
-
-    ES.api.chat({
-      task: 'story',
-      messages: lastContext.messages,
-      onDelta: function (chunk) {
-        buf += chunk;
-        aggregate(parser.feed(chunk), floor.parsed);
-        renderFloorsLive(floor);
-      }
-    }).then(function (res) {
-      if (res.local) {
-        /* API 不可用 → 回退本地引擎（提示已由 api 层 toast 给出） */
-        db.floors = db.floors.filter(function (f) { return f.id !== floor.id; });
-        capture = { blocks: [], deltas: [], dice: [] };
-        buildContext(text);
-        const f2 = {
-          id: uid('fl'), role: 'assistant', content: '', streaming: true, createdAt: Date.now(),
-          tokens: 0, options: [], parsed: null, variablesAfter: null,
-          meta: { lorebookEntries: lastContext.matchedEntries.map(function (m) { return m.entry.comment; }), promptTokens: lastContext.totalTokens, api: 'local' }
-        };
-        db.floors.push(f2);
-        renderFloors();
-        return generateViaLocal(f2, text, opts);
-      }
-      aggregate(parser.finish(), floor.parsed);
-      floor.content = buf;
-      floor.tokens = estimateTokens(buf);
-      floor.meta.ms = Date.now() - started;
-      floor.meta.api = 'primary';
-      floor.streaming = false;
-      save(); renderFloors();
-
-      const needSecondary = ES.api.mode() === 'dual' && ES.api.config().secondary.enabled &&
-        (!floor.parsed.sum || Object.keys(floor.parsed.varsCommands.merge || {}).length === 0);
-      if (!needSecondary) return finishApiFloor(floor);
-
-      /* 次 API：只跑 <sum> + <vars>（可用更便宜的模型） */
-      floor.meta.secondaryPending = true;
-      renderFloors();
-      return ES.api.chat({ task: 'summary', messages: ES.api.summaryPrompt(floor.parsed.maintext, projectVars()) })
-        .then(function (sres) {
-          if (sres && sres.text) {
-            const sp = new StreamTagParser(db.settings.tags, db.settings.opaqueTags);
-            aggregate(sp.feed(sres.text), floor.parsed);
-            aggregate(sp.finish(), floor.parsed);
-            floor.meta.api = 'primary+secondary';
-            floor.meta.model2 = ES.api.config().secondary.model;
-            floor.meta.ms2 = sres.ms;
-          }
-          finishApiFloor(floor);
-        }).catch(function () { finishApiFloor(floor); });
+    return ES.narrative.aiTurn(text, { fromTavern: true }).then(function () {
+      streaming = false;
+      finishFloor(floor, beforeOvr, text, opts);
     }).catch(function (e) {
-      floor.streaming = false;
-      floor.parsed.maintext = '（API 调用失败：' + U.esc(String(e.message || e)) + '）';
-      floor.meta.api = 'error';
-      save(); renderFloors();
-      if (ES.api.config().fallbackLocal) { generateViaLocal(floor, text, opts); }
+      streaming = false;
+      console.warn(e);
+      finishFloor(floor, beforeOvr, text, opts);
     });
   }
   function finishApiFloor(floor) {
@@ -815,6 +773,10 @@ ES.tavern = (function () {
   function finishFloor(floor, beforeOvr, text, opts) {
     const ctx = lastContext || { matchedEntries: [] };
     const maintext = blocksToMaintext(capture.blocks) || '（本回合没有产生新的叙事文本）';
+    /* 选项统一来自叙事层（模型生成或兜底），酒馆侧栏与主界面共用 */
+    if (ES.narrative.setChoices && floor.parsed && (floor.parsed.options || []).length) {
+      ES.narrative.setChoices(floor.parsed.options);
+    }
     const choices = ES.narrative.currentChoices ? ES.narrative.currentChoices() : [];
     const varsPatch = deltasToVars(capture.deltas);
     const after = ES.state.ovr(S);

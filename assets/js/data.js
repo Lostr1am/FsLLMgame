@@ -438,38 +438,38 @@ ES.data = (function () {
       attrs: { reaction: 5, stamina: 3 }, startNode: 'ch1_launch', note: '俱乐部抢人大战前夜' },
     { id: 'spring24', name: '第一赛季 · 萌芽期', phase: '第一联赛期', year: 2024, season: 'S1', month: 5, day: 20, icon: 'flag', roster: '2024', tier: 'T2',
       tagline: 'VCT CN 元年开启，排位与职业体系建立', quote: '微博热搜前十全是它。俱乐部的车一辆接一辆开进基地。',
-      attrs: { gameSense: 4, charisma: 4 }, startNode: 'ch1_tryout', note: '抢人大战 · 席位争夺' },
+      attrs: { gameSense: 4, charisma: 4 }, startNode: 'open_spring24', note: '抢人大战 · 席位争夺' },
     { id: 'scout24', name: '青训选拔期', phase: '青训选拔期', year: 2024, season: 'S1', month: 3, day: 9, icon: 'search', roster: '2024', tier: 'T2',
       tagline: '各队青训营与挑战者赛集中招新', quote: '两百份简历，只留十二个名字。你站在队列里，手心全是汗。',
-      attrs: { comms: 4 }, startNode: 'ch1_tryout', note: '试训压力最大的窗口' },
+      attrs: { comms: 4 }, startNode: 'open_scout24', note: '试训压力最大的窗口' },
     { id: 'league24', name: '第一届联赛期', phase: '第一联赛期', year: 2024, season: 'S1', month: 6, day: 3, icon: 'trophy', roster: '2024', tier: 'T1',
       tagline: '首个大型线下赛事，大名单十几人抢五个位置', quote: '你已经坐了六周冷板凳，看着首发在台上接受欢呼。',
-      attrs: { aim: 4, mentality: 4 }, startNode: 'ch1_debut', note: '直接进入竞技节奏' },
+      attrs: { aim: 4, mentality: 4 }, startNode: 'open_league24', note: '直接进入竞技节奏' },
     { id: 'worlds24', name: '第一年世界冠军赛期', phase: '世界冠军赛期', year: 2024, season: 'S1', month: 10, day: 1, icon: 'crown', roster: '2024', tier: 'T0',
       tagline: '首届全球冠军赛，CN 赛区冲击世界之巅', quote: '酒店窗外的城市在发光。有些人一辈子只有这一次机会。',
-      attrs: { mentality: 8, gameSense: 6, aim: 4, stamina: -4 }, startNode: 'ch1_worlds', note: '最高强度 · 舆论峰值' },
+      attrs: { mentality: 8, gameSense: 6, aim: 4, stamina: -4 }, startNode: 'open_worlds24', note: '最高强度 · 舆论峰值' },
     { id: 'rise25', name: '第二年 · 强队崛起期', phase: '第一联赛期', year: 2025, season: 'S2', month: 5, day: 18, icon: 'trend-up', roster: '2025', tier: 'T1',
       tagline: '豪门格局初成，BLG 与 EDG 群雄并起', quote: '转会窗的最后一天，豪门的车停在你家楼下。',
-      attrs: { charisma: 5, insight: 4 }, startNode: 'ch1_debut', note: '王朝成型 · 身价暴涨' },
+      attrs: { charisma: 5, insight: 4 }, startNode: 'open_rise25', note: '王朝成型 · 身价暴涨' },
     { id: 'dynasty25', name: '第三年 · 王朝期', phase: '第一联赛期', year: 2025, season: 'S2', month: 7, day: 6, icon: 'crown', roster: '2025', tier: 'T0',
       tagline: '统治级战队出现，你被写进了「下一个时代」的名单', quote: '所有人都在等你兑现天赋，包括你自己。',
-      attrs: { aim: 5, charisma: 4 }, startNode: 'ch2_press', note: '高光与压力同步拉满' },
+      attrs: { aim: 5, charisma: 4 }, startNode: 'open_dynasty25', note: '高光与压力同步拉满' },
     { id: 'shift26', name: '第四年 · 格局剧变期', phase: '第一联赛期', year: 2026, season: 'S3', month: 5, day: 12, icon: 'refresh', roster: '2026', tier: 'T0',
       tagline: '版本巨变、老将更替潮，旧体系一夜失效', quote: '补丁把过去三年的答案全部作废。有人沉了，有人起飞。',
-      attrs: { insight: 8, gameSense: 4, reaction: -3 }, startNode: 'ch3_league', note: '版本洗牌 · 转型窗口' },
+      attrs: { insight: 8, gameSense: 4, reaction: -3 }, startNode: 'open_shift26', note: '版本洗牌 · 转型窗口' },
     { id: 'legend27', name: '第五年 · 传奇时代', phase: '第一联赛期', year: 2027, season: 'S4', month: 4, day: 2, icon: 'sparkle', roster: '2026→推演', tier: 'T0',
       tagline: '电竞商业化爆发，选手开始成为真正的明星', quote: '你的脸出现在地铁广告上，而你的手还在疼。',
-      attrs: { charisma: 8, insight: 4 }, startNode: 'ch4_transfer', note: '演绎扩展区 · 商业与生涯取舍' },
+      attrs: { charisma: 8, insight: 4 }, startNode: 'open_legend27', note: '演绎扩展区 · 商业与生涯取舍' },
     { id: 'free', name: '完全自由时间', phase: '第一联赛期', year: 2026, season: 'S3', month: 5, day: 1, icon: 'compass', roster: '2026', tier: 'T1',
       tagline: '自定义任意时间点，可前可后', quote: '你决定从哪一天开始算起。',
-      attrs: {}, startNode: 'ch1_tryout', note: '自由开局 · 世界状态由你指定' },
+      attrs: {}, startNode: 'open_free', note: '自由开局 · 世界状态由你指定' },
     { id: 'after', name: '结局后时代', phase: '第一联赛期', year: 2028, season: 'S5', month: 5, day: 8, icon: 'moon', roster: '2026→推演', tier: 'T1',
       tagline: '夺冠退役之后，以新身份回到这个圈子', quote: '训练室的灯还亮着，只是坐在那里的不再是你。',
-      attrs: { insight: 6, mentality: 6 }, startNode: 'ch5_final', note: '教练 / 老板 / 解说 / 主播线' },
+      attrs: { insight: 6, mentality: 6 }, startNode: 'open_after', note: '教练 / 老板 / 解说 / 主播线' },
     { id: 'worlds25', name: '巴黎世界冠军赛期', phase: '世界冠军赛期', year: 2025, season: 'S2', month: 10, day: 6, icon: 'trophy', roster: '2025', tier: 'T0',
       tagline: 'S2 世界冠军赛在巴黎打响，NRG 夺冠',
       quote: '巴黎的场馆里没有一张熟悉的脸——除了你。',
-      attrs: { mentality: 6, comms: 4 }, startNode: 'ch5_worlds', note: '国际赛场 · 强强对话' }
+      attrs: { mentality: 6, comms: 4 }, startNode: 'open_worlds25', note: '国际赛场 · 强强对话' }
   ];
 
 
@@ -502,12 +502,10 @@ ES.data = (function () {
 
   /* 行动选项设计规则（融合自预设的「追加行动选项」，按本作 3—5 项收敛） */
   const OPTION_RULES = [
-    '【行动选项设计】必须给出 3—5 个选项，玩家（{{user}}）是每个选项的隐形主语，不写主语。',
+    '【行动选项设计】必须给出恰好 3 个选项，玩家（{{user}}）是每个选项的隐形主语，不写主语。',
     '· 选项 1：平滑推进。顺承前文的小行动，同场景内产生较小推动。',
-    '· 选项 2：另一种侧重。同样平滑，但换一种做法或对象（例如换成沟通、训练、商业、舆论）。',
-    '· 选项 3：推进时间或空间。明确写出「接下来几天 / 去某地 / 约见某人」，把节奏往前推。',
-    '· 选项 4：严肃路线。追主线、查线索、回收前文伏笔，或处理合同、伤病、队内矛盾。',
-    '· 选项 5（可选）：超展开。脱离当前事件线，引入新的机会或完全换一种基调。',
+    '· 选项 2：推进时间或空间。明确写出「接下来几天 / 去某地 / 约见某人」，把节奏往前推。',
+    '· 选项 3：严肃路线或超展开。追主线、查线索、回收伏笔，处理合同/伤病/队内矛盾，或引入新的机会。',
     '· 内容要简练：只给言行，不加解释与评述；以对白为主也可以；不得重复前文出现过的言行。'
   ];
   /* ══════════ 俱乐部资料库（附录 Q：赛区席位 · 2025 阵容 · 资源分级） ══════════ */
@@ -927,6 +925,83 @@ ES.data = (function () {
         { label: '要求缩短合同年限，保留自由身', desc: '短期合同更自由，但俱乐部会降低投入。', risk: 'normal', check: { attr: 'insight', dc: 14, tag: '悟性' }, effects: { money: 60000, flags: { signed: true, shortContract: true }, special: { teammateTrust: 4 } }, failEffects: { money: 50000, special: { coachTrust: -4 }, flags: { signed: true }, club: 'sign' }, result: { success: '你只签了两年。教练皱眉，但经理同意了——她赌你会涨得快。', fail: '俱乐部拒绝了。你最终还是签了三年，笔尖在纸上停了两秒。' }, next: 'ch1_debut' },
         { label: '找经纪人阿豪咨询合同陷阱', desc: '花钱买专业意见，可能识破隐藏条款。', risk: 'normal', check: { attr: 'insight', dc: 12, tag: '悟性' }, effects: { money: -8000, special: { standing: 8, coachTrust: 4 }, flags: { signed: true, fairContract: true }, club: 'sign' }, result: { success: '阿豪圈出三条隐藏扣款与一条自动续约条款，帮你全部改掉。「以后这种事，先找我。」', fail: '阿豪的电话一直没接通。你只能凭自己的判断签下合同，心里有点没底。' }, next: 'ch1_debut' }
       ]
+    },
+    open_spring24: {
+      chapter: { id: 'ch1', name: '序章 · VCT CN 元年', index: 'PR.01' }, scene: '上海 · 招募试训馆',
+      days: 7,
+      lines: [{"t":"narr","text":"五月的上海已经很热。招募试训馆是一个租来的网吧二层，一百多台机器排成四列，风扇声压过了所有人的说话声。"},{"t":"narr","text":"你排在第三列第七位。前面的人打完三张图就被叫走了，回来时脸色不好看。墙上贴着一张 A4 纸：VCT CN 元年，十二个席位，今天只签两个人。"},{"t":"speak","role":"coach","who":"招募官","text":"「坐下，别调设置。用我的灵敏度打第一张图——我想看你适应能力，不是看你习惯。」"}],
+      choices: [{"label":"照他说的，用陌生灵敏度打第一张图","desc":"服从与适应：稳，但开局数据会难看。","risk":"safe","check":{"attr":"insight","dc":12,"tag":"悟性"},"effects":{"attrs":{"insight":2},"special":{"coachTrust":6}},"result":{"success":"你花了半张图找手感，后半张图数据反超了同组所有人。","fail":"手感始终没找回来，第一张图你打得很难看。"}},{"label":"先偷偷把灵敏度改回自己的，打完再解释","desc":"取巧：数据好看，但可能被发现。","risk":"high","check":{"attr":"comms","dc":15,"tag":"沟通"},"effects":{"attrs":{"aim":2},"special":{"coachTrust":-4}},"result":{"success":"你打出全场最高 ACS，事后主动承认改了设置。招募官看了你两秒，没说话，在纸上打了个勾。","fail":"他中途走过来看了一眼你的设置界面。"}},{"label":"问他：能不能给我十分钟先练一下枪感","desc":"谈判：为自己争取条件。","risk":"normal","check":{"attr":"comms","dc":13,"tag":"沟通"},"effects":{"special":{"coachTrust":3,"fame":1}},"result":{"success":"「十分钟。」他看了眼表，「十点零一分我开始计分。」","fail":"「外面还有九十个人。」他把纸推到一边。"}}],
+      openNext: 'ch1_tryout'
+    },
+    open_scout24: {
+      chapter: { id: 'ch1', name: '序章 · 青训营开门', index: 'PR.01' }, scene: '成都 · 青训营体测场',
+      days: 10,
+      lines: [{"t":"narr","text":"青训营第一天不碰电脑。两百个人在体测场跑折返，教练拿着秒表站在终点，一次不说多余的话。"},{"t":"narr","text":"你前面那个男生第五趟就扶着膝盖停了。你听见自己的呼吸像风箱，但还没到极限。"},{"t":"speak","role":"coach","who":"青训主管","text":"「跑完的去那边测握力和反应。今天刷掉一半人，明天再刷一半。想留下的，现在开始就拿出点东西来。」"}],
+      choices: [{"label":"匀速跑完全程，把力气留到反应测试","desc":"分配体能：体测成绩一般，但后续测试占优。","risk":"safe","check":{"attr":"stamina","dc":12,"tag":"体能"},"effects":{"attrs":{"stamina":2},"res":{"condition":-6}},"result":{"success":"你第十一个冲线，喘息三分钟就恢复。反应测试你排全营第二。","fail":"你冲线时腿软了一下，反应测试手还在抖。"}},{"label":"死跟第一梯队，把折返跑到极限","desc":"拼：体测抢眼，但可能透支。","risk":"high","check":{"attr":"mentality","dc":14,"tag":"心态"},"effects":{"attrs":{"stamina":2,"mentality":1},"res":{"condition":-16,"hand":-4},"special":{"coachTrust":8}},"result":{"success":"你第二个冲线，趴在栏杆上吐了。主管在名单上把你的名字圈了起来。","fail":"你在最后一趟抽筋倒地，被抬到场边。"}},{"label":"跑完主动去帮工作人员收器材","desc":"态度线：用细节留印象。","risk":"safe","effects":{"special":{"coachTrust":5,"teammateTrust":4},"attrs":{"charisma":1}},"result":{"success":"主管路过时看了你一眼：「你是哪个队的？」「还没队。」「那就先记着。」"}}],
+      openNext: 'ch1_tryout'
+    },
+    open_league24: {
+      chapter: { id: 'ch1', name: '序章 · 第一届联赛期', index: 'PR.01' }, scene: '上海 · EDG 基地替补席',
+      days: 7,
+      lines: [{"t":"narr","text":"联赛第一阶段的比赛日，基地只有你和理疗师。大屏幕上是自己队的比赛，首发五人戴着耳机在几百公里外的舞台上。"},{"t":"narr","text":"你已经坐了六周冷板凳。训练赛的数据不差，但教练从没在正式比赛里叫过你的名字。"},{"t":"speak","role":"coach","who":"主教练","text":"「下周打潮汐，首发有个位置空了。」他站在门口，手里拿着名单，「我需要一个愿意背锅的人上。你要不要？」"}],
+      choices: [{"label":"抓住机会，直接答应首发","desc":"一步登天，或者一次社死。","risk":"high","check":{"attr":"mentality","dc":15,"tag":"心态"},"effects":{"attrs":{"gameSense":3,"mentality":2},"special":{"coachTrust":12,"standing":10},"res":{"condition":-12}},"result":{"success":"首秀你打出 22/11，赛后的采访区第一次有人喊你的 ID。","fail":"首秀 8/18，你下场时听见了嘘声。"}},{"label":"要求先打一场训练赛证明自己","desc":"谨慎路线，用一周训练赛换信任。","risk":"safe","check":{"attr":"gameSense","dc":13,"tag":"意识"},"effects":{"attrs":{"gameSense":2,"comms":2},"special":{"coachTrust":8,"teammateTrust":6},"res":{"condition":-6}},"result":{"success":"一周训练赛你打了 18 张图，赢了 13 张。教练在名单上把你的名字提前了。","fail":"训练赛表现平平，教练决定再等一周。"}},{"label":"拒绝，先把手伤养好","desc":"长期主义，但可能错过窗口期。","risk":"safe","effects":{"res":{"hand":14,"condition":6},"special":{"coachTrust":-6},"flags":{"refusedDebut":true}},"result":{"success":"你去康复中心待了十天。回来时首发名单里没有你，但你的手不再疼了。"}}],
+      openNext: 'ch1_debut'
+    },
+    open_worlds24: {
+      chapter: { id: 'ch1', name: '序章 · 首尔世界冠军赛', index: 'PR.01' }, scene: '首尔 · 酒店会议室',
+      days: 5,
+      lines: [{"t":"narr","text":"首尔的十月比上海冷。你是随队名单上的第六人，没有上场资格，但教练组需要有人陪练、做数据、在训练室守着。"},{"t":"narr","text":"凌晨两点，训练室只剩你和数据分析师。屏幕上是对手的进攻回合，你一遍一遍地按暂停，把出手位置记在纸上。"},{"t":"speak","role":"analyst","who":"数据分析师","text":"「你这套笔记，比我们组的模板还细。」他把咖啡推给你，「明天开会，你敢不敢拿这个讲？」"}],
+      choices: [{"label":"敢，明天会议上讲你的发现","desc":"越级表现：可能被看见，也可能越界。","risk":"high","check":{"attr":"gameSense","dc":15,"tag":"意识"},"effects":{"attrs":{"gameSense":3},"special":{"coachTrust":10,"standing":8,"teammateTrust":-3}},"result":{"success":"你在战术会上讲了十二分钟。主教练最后说：「按这个改。」","fail":"你讲到一半被助理教练打断：「这些我们看过了。」"}},{"label":"把笔记交给分析师，让他去讲","desc":"团队路线：稳妥，功劳共享。","risk":"safe","effects":{"special":{"teammateTrust":8,"coachTrust":4},"attrs":{"comms":2}},"result":{"success":"分析师在会上提了你的名字。散会后有两名首发过来问你细节。"}},{"label":"先睡，明天再看","desc":"保存状态：体能回补，错过机会。","risk":"safe","effects":{"res":{"condition":10,"hand":4}},"result":{"success":"你睡了六个小时，是这一周第一次睡满。"}}],
+      openNext: 'ch5_worlds'
+    },
+    open_rise25: {
+      chapter: { id: 'ch1', name: '序章 · 强队崛起期', index: 'PR.01' }, scene: '基地 · 战术室',
+      days: 7,
+      lines: [{"t":"narr","text":"联赛第一阶段打到一半，你们排在第四。榜首那支队伍这一周换了指挥，节奏忽然快了半档，上一场把你们 2:0 带走。"},{"t":"narr","text":"战术室的墙上贴着积分表，前四名进阶段赛，你们只领先第五名一个胜场。"},{"t":"speak","role":"coach","who":"主教练","text":"「他们的新指挥喜欢打 A 大身位，我们上次被打穿了三次。」他看向你，「你觉得，为什么我们防不住？」"}],
+      choices: [{"label":"把三次失守的回合逐帧拆给他看","desc":"准备充分：展示意识与复盘能力。","risk":"normal","check":{"attr":"gameSense","dc":14,"tag":"意识"},"effects":{"attrs":{"gameSense":2},"special":{"coachTrust":9,"standing":6}},"result":{"success":"你指出问题不在个人枪法，而在道具衔接晚了半秒。教练当场改了防守布置。","fail":"你讲得太细，教练打断你：「结论。」"}},{"label":"提议加练配合，全队一起补这套防守","desc":"团队路线：提升默契，消耗体能。","risk":"safe","check":{"attr":"comms","dc":12,"tag":"沟通"},"effects":{"special":{"teammateTrust":10,"coachTrust":5},"res":{"condition":-8},"metrics":{"trainStreak":1}},"result":{"success":"加练了三个小时，最后一套防守终于跑顺了。"}},{"label":"先练自己的对枪，别管战术","desc":"个人路线：数据变好，但可能被认为不合群。","risk":"safe","check":{"attr":"aim","dc":12,"tag":"枪法"},"effects":{"attrs":{"aim":2,"reaction":1},"special":{"teammateTrust":-4}},"result":{"success":"你在靶场打了两小时，压枪稳定度提升明显。"}}],
+      openNext: 'ch1_debut'
+    },
+    open_dynasty25: {
+      chapter: { id: 'ch1', name: '序章 · 王朝期', index: 'PR.01' }, scene: '基地 · 冠军陈列墙',
+      days: 7,
+      lines: [{"t":"narr","text":"基地走廊的陈列墙上多了一个新格子，里面放着上一年的联赛奖杯复制品。每周都有人在那面墙前拍照。"},{"t":"narr","text":"今年所有人的目标只有一个：卫冕。赞助商的合同里写着卫冕奖金条款，粉丝群里在讨论「有没有可能连冠」。"},{"t":"speak","role":"manager","who":"运营经理","text":"「下周开始，你的直播时长要加到每周八小时。夺冠之后，你的镜头价值不一样了。」"}],
+      choices: [{"label":"答应商务安排，先把曝光做起来","desc":"商业路线：收入与名声上升，训练时间被挤压。","risk":"safe","effects":{"special":{"fame":6,"heat":5},"res":{"money":60000,"condition":-8},"metrics":{"liveHours":4}},"result":{"success":"两场直播涨了四万粉，商务报价跟着涨。"}},{"label":"谈条件：只在休赛期加直播","desc":"谈判：保住训练，但可能得罪运营。","risk":"normal","check":{"attr":"comms","dc":14,"tag":"沟通"},"effects":{"special":{"teammateTrust":4,"coachTrust":4},"res":{"money":15000}},"result":{"success":"经理让步了：「赛季内不加，休赛期补回来。」","fail":"「合同里写着的。」他把笔帽按上。"}},{"label":"主动加练，把新版本的强势特工练到能用","desc":"竞技路线：为卫冕做准备。","risk":"safe","check":{"attr":"insight","dc":13,"tag":"悟性"},"effects":{"attrs":{"insight":2,"aim":1},"res":{"condition":-6},"metrics":{"trainStreak":1}},"result":{"success":"你把两个新特工练到了比赛可用，教练组把它写进了战术本。"}}],
+      openNext: 'ch2_press'
+    },
+    open_shift26: {
+      chapter: { id: 'ch1', name: '序章 · 格局剧变期', index: 'PR.01' }, scene: '基地 · 转会办公室',
+      days: 10,
+      lines: [{"t":"narr","text":"赛季结束后的第四天，基地一半的房间空了。两名首发转走，教练组换了数据分析团队，走廊里堆着没拆封的新外设。"},{"t":"narr","text":"你留了下来，但你的位置不再确定——新来的两个人打同一个位置。"},{"t":"speak","role":"coach","who":"新任主教练","text":"「我不看资历。下周开始内部对抗，谁赢谁上。你有十天时间让我记住你。」"}],
+      choices: [{"label":"这十天全扑在内部对抗上","desc":"正面竞争：消耗大，最直接。","risk":"high","check":{"attr":"mentality","dc":14,"tag":"心态"},"effects":{"attrs":{"aim":2,"mentality":1},"special":{"coachTrust":10,"standing":8},"res":{"condition":-14},"metrics":{"trainStreak":2}},"result":{"success":"内部对抗你打了 9 场赢 7 场，新教练在名单上写下你的名字。","fail":"你在第三天被打崩了心态，连输四场。"}},{"label":"先找新教练谈，问清楚他要什么风格","desc":"沟通路线：先对需求再发力。","risk":"normal","check":{"attr":"comms","dc":13,"tag":"沟通"},"effects":{"attrs":{"gameSense":2},"special":{"coachTrust":7}},"result":{"success":"他要的是快节奏的进攻发起点。你回去把训练重点改了。","fail":"「你先打好自己的。」他没给你更多信息。"}},{"label":"趁窗口期让经纪人探探外面的报价","desc":"退路：多一条选择，也可能被俱乐部知道。","risk":"high","check":{"attr":"insight","dc":14,"tag":"悟性"},"effects":{"res":{"money":20000},"flags":{"exploredMarket":true},"special":{"coachTrust":-5}},"result":{"success":"经纪人回话：有两支中游队伍愿意谈，价格比现在高两成。","fail":"消息不知怎么传到了俱乐部，气氛变得微妙。"}}],
+      openNext: 'ch3_league'
+    },
+    open_legend27: {
+      chapter: { id: 'ch1', name: '序章 · 传奇时代', index: 'PR.01' }, scene: '上海 · 主场馆通道',
+      days: 7,
+      lines: [{"t":"narr","text":"主场馆的通道里挂着历届冠军的照片，最前面几张已经泛黄。你数了数，自己的照片在第四排。"},{"t":"narr","text":"今年你二十七岁。新人叫你「哥」，媒体开始用「老将」这个词，赞助商依然排队，但合同年限从三年变成了一年。"},{"t":"speak","role":"coach","who":"主教练","text":"「队里想让你带一个新人，同时打轮换。」他停了一下，「你怎么想？」"}],
+      choices: [{"label":"接受带新人，接受轮换","desc":"传承路线：地位稳固，出场时间下降。","risk":"safe","effects":{"special":{"coachTrust":10,"teammateTrust":12,"standing":-4},"attrs":{"comms":2,"gameSense":1}},"result":{"success":"你带的那个新人第一次上场前，把你的护腕借走了。"}},{"label":"拒绝轮换，要求保证首发","desc":"强硬路线：保住位置，可能激化矛盾。","risk":"high","check":{"attr":"mentality","dc":15,"tag":"心态"},"effects":{"special":{"standing":8,"coachTrust":-6},"res":{"condition":-6}},"result":{"success":"教练同意了，但只给你一个赛段的时间证明。","fail":"「那就看数据。」他把名单合上。"}},{"label":"提出转指挥位，用脑子打下去","desc":"转型路线：换一条生存方式。","risk":"normal","check":{"attr":"gameSense","dc":15,"tag":"意识"},"effects":{"attrs":{"gameSense":3,"comms":2},"special":{"coachTrust":8},"flags":{"iglTry":true}},"result":{"success":"训练赛你指挥了六张图，队伍的道具同步率明显提高。","fail":"你喊的节奏和队伍不合拍，训练赛被打得很乱。"}}],
+      openNext: 'ch4_transfer'
+    },
+    open_free: {
+      chapter: { id: 'ch1', name: '序章 · 完全自由', index: 'PR.01' }, scene: '杭州 · 出租屋',
+      days: 14,
+      lines: [{"t":"narr","text":"合同在三天前到期。你没有续约，也没有签新队。手机里有四个未接来电，三个来自经纪人。"},{"t":"narr","text":"出租屋的桌子上摆着一台自己的机器，键盘是用了三年的那把。窗外是杭州的雨。"},{"t":"speak","role":"agent","who":"经纪人","text":"「自由身有自由身的好处，也有代价。你现在可以做任何选择——包括不打职业了。想清楚了吗？」"}],
+      choices: [{"label":"以自由身接训练赛与陪练，保持手感","desc":"自由路线：收入不稳，但时间自主。","risk":"safe","effects":{"res":{"money":12000,"condition":6},"metrics":{"trainStreak":1}},"result":{"success":"一个月里你接了六场陪练，还顺手把新版本吃透了。"}},{"label":"组一支挑战者赛队伍，从最底下打上来","desc":"创业路线：投入大，回报未知。","risk":"high","check":{"attr":"charisma","dc":15,"tag":"魅力"},"effects":{"special":{"fame":5,"teammateTrust":10},"res":{"money":-40000},"flags":{"ownTeam":true}},"result":{"success":"你拉到了四个人，报名了挑战者赛公开预选。","fail":"四个人里有两个在最后一刻反悔。"}},{"label":"先休息两周，把身体和心理都调回来","desc":"恢复路线：状态回补，错过窗口。","risk":"safe","effects":{"res":{"condition":18,"hand":10,"injury":-6}},"result":{"success":"两周没有碰键盘。第三周你打开电脑，手是稳的。"}}],
+      openNext: 'ch1_tryout'
+    },
+    open_after: {
+      chapter: { id: 'ch1', name: '序章 · 结局之后', index: 'PR.01' }, scene: '上海 · 空掉的训练室',
+      days: 7,
+      lines: [{"t":"narr","text":"最后一个赛季结束那天，你在训练室坐到很晚。五台机器只亮着一台，屏幕保护是大合照。"},{"t":"narr","text":"你今年二十四岁，手上做过两次手术。俱乐部给了你三个选项：转教练、转解说、或者继续打一年。"},{"t":"speak","role":"manager","who":"运营经理","text":"「不管你怎么选，基地的门一直开着。但合同，只到月底。」"}],
+      choices: [{"label":"转教练，从助理教练做起","desc":"转型路线：稳定，但要重新学一套本事。","risk":"safe","effects":{"attrs":{"gameSense":3,"comms":2},"special":{"coachTrust":12},"res":{"money":30000},"flags":{"toCoach":true}},"result":{"success":"你第一次站在战术板前，手心里全是汗。"}},{"label":"再打一年，把最后一年打到极限","desc":"燃烧路线：身体风险高，故事最完整。","risk":"high","check":{"attr":"mentality","dc":16,"tag":"心态"},"effects":{"attrs":{"aim":2,"mentality":2},"res":{"hand":-12,"condition":-10},"special":{"fame":8,"standing":8}},"result":{"success":"你打出了职业生涯最好的一年，也把身体逼到了极限。","fail":"赛季中段手伤复发，你连训练都完不成。"}},{"label":"转解说，站到台前","desc":"转型路线：收入稳定，离赛场不远。","risk":"safe","effects":{"attrs":{"charisma":3},"special":{"fame":10,"heat":6},"res":{"money":80000},"flags":{"toCaster":true}},"result":{"success":"第一次解说你紧张得把选手 ID 说错了一个，弹幕却说你「说得比选手还懂」。"}}],
+      openNext: 'ch5_final'
+    },
+    open_worlds25: {
+      chapter: { id: 'ch1', name: '序章 · 巴黎世界冠军赛', index: 'PR.01' }, scene: '巴黎 · 训练场馆',
+      days: 5,
+      lines: [{"t":"narr","text":"巴黎的十月，训练馆外面下着小雨。场馆里四支队伍共用八台机器，每队两小时，时间到了必须让出来。"},{"t":"narr","text":"你们被分在死亡之组，同组两支队伍都把你们研究得很透。第一场比赛在三天后。"},{"t":"speak","role":"coach","who":"主教练","text":"「他们的狙击手喜欢在 C 大架远点。」他把图钉在地图上，「第一张图，你敢不敢去点掉他？」"}],
+      choices: [{"label":"敢，把第一张图的对位交给我","desc":"承担核心对位：风险与回报都高。","risk":"high","check":{"attr":"aim","dc":15,"tag":"枪法"},"effects":{"attrs":{"aim":2,"reaction":1},"special":{"coachTrust":10,"standing":10},"res":{"condition":-8}},"result":{"success":"训练赛你把对面狙击手压到换位，教练当场拍板。","fail":"你连续三次被反身位狙掉，教练把图收了回去。"}},{"label":"先做防守方的道具方案，稳一手","desc":"准备路线：把胜负交给团队体系。","risk":"safe","check":{"attr":"gameSense","dc":14,"tag":"意识"},"effects":{"attrs":{"gameSense":2},"special":{"teammateTrust":8,"coachTrust":5}},"result":{"success":"你把三套道具配合写成一页纸，队友说这是这周最有用的东西。"}},{"label":"去看对手上一场的录像，找规律","desc":"情报路线：慢工，但可能找到破绽。","risk":"safe","check":{"attr":"insight","dc":13,"tag":"悟性"},"effects":{"attrs":{"insight":2,"gameSense":1},"res":{"condition":-4}},"result":{"success":"你发现他们的进攻在第二回合必换边路，写进了赛前简报。"}}],
+      openNext: 'ch5_worlds'
     },
     ch1_debut: {
       chapter: { id: 'ch1', name: '冷板凳', index: 'CH.01' }, scene: '基地 · 替补席',

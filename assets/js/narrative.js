@@ -591,7 +591,10 @@ ES.narrative = (function () {
     const low = rels.slice(-3).filter(function (r) { return r.affection < 45; });
     if (low.length) line.push('· 暗流：' + low.map(function (r) { return r.name + '（好感 ' + Math.round(r.affection) + '，' + r.role + '）'; }).join('；'));
     const q = (s.quests || []).filter(function (x) { return !x.done; }).slice(0, 3);
-    if (q.length) line.push('· 待办：' + q.map(function (x) { return x.name + '（' + x.progress + '/' + x.target + '，' + x.deadline + ' 天内）'; }).join('；'));
+    if (q.length) line.push('· 待办：' + q.map(function (x) {
+      const pg = (ES.state.questProgress ? ES.state.questProgress(s, x) : (x.progress || 0));
+      return x.name + '（' + pg + '/' + x.target + '，' + x.deadline + ' 天内）';
+    }).join('；'));
     const logs = (s.stats.log || []).slice(-4);
     if (logs.length) line.push('· 近期：' + logs.map(function (x) { return x.text; }).join(' → '));
     return line;
@@ -645,7 +648,7 @@ ES.narrative = (function () {
       '3. 尊重现实 VCT 设定：俱乐部、赛制（13 分制、加时）、地图与特工名称都要真实；现实选手只用其比赛 ID 与公开赛场形象，不涉及私生活；虚构配角可用中文名。',
       '4. 玩家是 17—19 岁的年轻选手，起点低、资源少；不要无理由地给他大赛冠军或顶级合同。',
       '5. 判定的成败由系统给出（见【判定结果】）；有判定时，剧情必须体现该结果，不要自行改变成败。',
-      '6. 每次回复必须包含 <maintext> 与至少 3 个 <option>。',
+      '6. 每次回复必须包含 <maintext> 与**恰好 3 个** <option>；玩家另有「自由行动」输入框，不要替他写自由行动选项。',
       '',
       '<文风>（必须遵守，来源：融合预设文风规则）',
       (D.STORY_STYLE || []).join('\n'),
@@ -745,8 +748,17 @@ ES.narrative = (function () {
         refreshEngineTag();
         return nextSceneLocal(opts.forceId);
       }
+      /* 降级：模型没写标签时，把整段原文当正文 */
+      let rawText = String(res && (res.text || res.raw) || '');
+      if (!parsed.maintext && rawText) {
+        parsed.maintext = rawText.replace(/<\/?(?:thinking|think|vars|sum|option|maintext)>/gi, '').trim();
+      }
+      if (!parsed.maintext) {
+        parsed.maintext = '（模型这次没有返回可用文本' + (rawText ? '，原始响应见下方' : '，可能是超时或鉴权失败') + '。可以点「继续」重试，或换一个模型。';
+      }
       live.done(parsed.maintext);
       const blocks = [];
+      if (!parsed.sum && !(parsed.options || []).length && rawText) blocks.push({ t: 'think', text: '<b>模型原始响应</b>（未按标签格式输出，前 1200 字）<br>' + esc2html(rawText.slice(0, 1200)) });
       if (parsed.thinking) blocks.push({ t: 'think', text: esc2html(parsed.thinking) });
       if (parsed.sum) blocks.push({ t: 'sum', text: esc2html(parsed.sum).replace(/\n/g, '<br>') });
       const applied = ES.state.applyStoryVars(S, parsed.varsCommands.merge);
@@ -763,7 +775,7 @@ ES.narrative = (function () {
       if (aiHistory.length > AI_HISTORY_MAX * 2) aiHistory = aiHistory.slice(-AI_HISTORY_MAX * 2);
       ES.state.pushLog(S, 'story', (parsed.maintext || '').slice(0, 60));
       if (ES.tavern && ES.tavern.captureBlocks) { try { ES.tavern.captureBlocks([{ t: 'narr', text: parsed.maintext || '' }].concat(blocks)); } catch (e) {} }
-      const setCh = function () { setChoices(parsed.options); };
+      const setCh = function () { setChoices(parsed.options, { rawText: rawText }); };
       const finish = function () {
         setCh();
         if (ES.app.refreshUI) ES.app.refreshUI();
@@ -809,12 +821,57 @@ ES.narrative = (function () {
     return out;
   }
 
+  /** 模型没按标签输出时：从纯文本里抽选项 */
+  function optionsFromText(txt) {
+    const s = String(txt || '');
+    const out = [];
+    const re = /^\s*(?:[-*•]|\d{1,2}[.、)]|选项\s*\d{1,2}\s*[:：])\s*(.+)$/gm;
+    let m;
+    while ((m = re.exec(s)) !== null) {
+      const line = m[1].trim().replace(/^(?:选项\s*\d{1,2}\s*[:：]\s*)/, '');
+      if (line.length < 4 || line.length > 90) continue;
+      if (/^[\d.、)\s]+$/.test(line)) continue;
+      out.push(line);
+      if (out.length >= 5) break;
+    }
+    return out;
+  }
+
+  /** 兜底选项：任何情况下都保证有 3 个可执行行动（自由行动始终由玩家输入） */
+  function fallbackChoices() {
+    /* 叙事层可能尚未启动（酒馆层先挂载），此时给通用三条 */
+    if (!S || !S.profile) {
+      return [
+        { label: '继续训练，把手感维持住', desc: '稳妥推进', risk: 'safe', check: { attr: 'aim', dc: 12, tag: '枪法' } },
+        { label: '找教练聊一次，问清楚下一步怎么走', desc: '沟通判定', risk: 'normal', check: { attr: 'comms', dc: 13, tag: '沟通' } },
+        { label: '推进一周：按部就班训练与排位', desc: '时间快进，由剧情结算', risk: 'safe' }
+      ];
+    }
+    const pos = ES.state.positionOf(S).name;
+    const rels = S.relations.slice().sort(function (a, b) { return a.affection - b.affection; });
+    const low = rels[0];
+    const list = [
+      { label: '加练两小时，把今天的失误逐帧过一遍', desc: '稳妥推进：小幅成长，消耗体能', risk: 'safe', check: { attr: 'aim', dc: 12, tag: '枪法' } },
+      { label: '找教练谈一次，问清楚自己离首发还差什么', desc: '沟通判定，可能改变教练信任与定位', risk: 'normal', check: { attr: 'comms', dc: 13, tag: '沟通' } },
+      { label: '约队友吃个饭，先把队内关系理顺', desc: '关系线：提升队内好感与默契', risk: 'safe' }
+    ];
+    if (low) list.push({ label: '私下找 ' + low.name + ' 聊一次，把话说开', desc: '关系修复：' + low.name + ' 目前好感最低（' + Math.round(low.affection) + '）', risk: 'normal', check: { attr: 'comms', dc: 12, tag: '沟通' } });
+    return list.slice(0, 3);
+  }
+
   /** 用模型给出的选项替换当前选项（酒馆层与叙事层共用） */
-  function setChoices(lines) {
-    const list = (Array.isArray(lines) ? lines : String(lines || '').split('\n'))
+  function setChoices(lines, opts) {
+    opts = opts || {};
+    let list = (Array.isArray(lines) ? lines : String(lines || '').split('\n'))
       .map(parseOptionLine).filter(Boolean);
+    if (!list.length && opts.rawText) list = optionsFromText(opts.rawText).map(parseOptionLine).filter(Boolean);
+    if (!list.length) list = fallbackChoices();
     if (!list.length) return false;
-    current = current || { id: 'ai', chapter: { id: S.scene && S.scene.chapterId, name: 'AI 剧情', index: 'AI' }, scene: 'AI 剧情', choices: [], days: 1, next: null };
+    current = current || {
+      id: 'ai',
+      chapter: { id: (S && S.scene && S.scene.chapterId) || 'ch1', name: 'AI 剧情', index: 'AI' },
+      scene: 'AI 剧情', choices: [], days: 1, next: null
+    };
     current.choices = list;
     renderChoices(list);
     return true;
@@ -971,7 +1028,7 @@ ES.narrative = (function () {
   function renderNode(nodeId) {
     const node = D.SCENES[nodeId];
     if (!node) return randomInterlude();
-    current = { id: nodeId, chapter: node.chapter, scene: node.scene, choices: node.choices, days: node.days, next: null };
+    current = { id: nodeId, chapter: node.chapter, scene: node.scene, choices: node.choices, days: node.days, next: node.openNext || null };
     setChapter(node.chapter);
     setSceneTag(node.scene);
     const withChapter = [{ t: 'chapter', text: node.chapter.index + ' · ' + node.chapter.name + ' —— ' + node.scene }].concat(node.lines);
