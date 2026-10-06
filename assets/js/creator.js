@@ -583,6 +583,14 @@ ES.creator = (function () {
       : '<div class="inset tiny dim" style="padding:14px">选择后显示该位置的总评权重与关键属性规则。</div>';
   }
 
+  /** 当前时间线对应的阵容年份（与 state.rosterYearFor 同口径） */
+  function currentRosterYear() {
+    const r = String((setup.timeline && setup.timeline.roster) || '2025');
+    if (r.indexOf('2026') === 0) return '2026';
+    if (r === '2023') return '2024（建队基准）';
+    return r;
+  }
+
   /* ── 7 地点 ── */
   function renderCities() {
     function card(c) {
@@ -666,7 +674,12 @@ ES.creator = (function () {
       '<div><b style="font-size:16px">' + U.esc(c.name) + '</b><div class="tiny dim-2 mono" style="margin-top:4px">' + U.esc(c.short) + ' · ' + U.esc(c.region) + ' 赛区 · ' + U.esc(c.city) + ' · ' + U.esc(c.tier) + ' · ' + U.esc(c.seat) + '</div></div>' +
       '<span class="tag" data-tone="' + (c.tier === 'T0' ? 'gold' : 'cyan') + '">' + U.esc(c.env) + '</span></div>' +
       '<div class="small" style="margin-top:10px">' + U.esc(c.style) + '</div>' +
-      '<div class="small" style="margin-top:8px"><span class="dim">2025 阵容</span> · ' + U.esc(c.roster.join('、')) + '</div>' +
+      '<div class="small" style="margin-top:8px"><span class="dim">2025 阵容</span> · ' + U.esc(((c.rosters && c.rosters['2025']) || c.roster).join('、')) + '</div>' +
+        '<div class="small" style="margin-top:4px"><span class="dim">逐年阵容</span> · ' + ['2024', '2025', '2026'].map(function (y) {
+          const r = (c.rosters && c.rosters[y]) || [];
+          return '<span class="tag" data-tone="dim" style="margin-right:4px">' + y + '：' + U.esc(r.slice(0, 5).join('、')) + '</span>';
+        }).join('') + '</div>' +
+        '<div class="tiny dim-2" style="margin-top:4px">当前时间线将采用 <b>' + U.esc(currentRosterYear()) + '</b> 年阵容（附录 Q.6）</div>' +
       '<div class="small" style="margin-top:6px"><span class="dim">战绩 / 荣誉</span> · ' + U.esc(c.honors || '—') + '</div>' +
       '<div class="small" style="margin-top:6px"><span class="dim">剧情线</span> · ' + U.esc(c.line) + '</div>' +
       '<div class="tiny dim-2" style="margin-top:8px">管理层与教练组为虚构 NPC（第25章）；选手以比赛 ID 出现（附录Q）。</div>' +
@@ -729,7 +742,10 @@ ES.creator = (function () {
       name: setup.name, tag: setup.tag, gender: setup.gender, age: setup.age, height: setup.height,
       look: setup.look, orientation: setup.orientation, loveStyle: setup.loveStyle,
       traits: setup.traits, catchphrase: setup.catchphrase, sigil: setup.sigil, sign: setup.sign,
-      positionId: setup.positionId, city: setup.city, timeline: setup.timeline, clubId: setup.clubId,
+      positionId: setup.positionId,
+      city: setup.city && setup.city.id ? setup.city.id : setup.city,
+      timeline: setup.timeline && setup.timeline.id ? setup.timeline.id : setup.timeline,
+      clubId: setup.clubId && setup.clubId.id ? setup.clubId.id : setup.clubId,
       openingChoice: setup.openingChoice
     });
   }
@@ -783,7 +799,8 @@ ES.creator = (function () {
       '<div class="lrow"><span class="lrow-k">资源分级</span><span class="lrow-v">' + U.esc(S.club.tier) + ' · ' + U.esc(S.club.seat) + '</span></div>' +
       '<div class="lrow"><span class="lrow-k">年薪 / 合同</span><span class="lrow-v">¥' + U.fmtNum(S.club.salary) + ' · ' + S.club.years + ' 年</span></div>' +
       '<div class="lrow"><span class="lrow-k">违约金</span><span class="lrow-v">¥' + U.fmtNum(S.club.buyout) + '</span></div>' +
-      '<div class="lrow"><span class="lrow-k">2025 阵容</span><span class="lrow-v">' + U.esc(S.club.roster.join('、')) + '</span></div>'
+      '<div class="lrow"><span class="lrow-k">阵容（' + U.esc(S.club.rosterYear || '—') + '）</span><span class="lrow-v">' + U.esc(S.club.roster.join('、')) + '</span></div>' +
+      '<div class="lrow"><span class="lrow-k">阵容说明</span><span class="lrow-v tiny dim-2">' + U.esc(S.club.rosterNote || '') + '</span></div>'
       : '<div class="empty tiny dim">未选择俱乐部</div>';
   }
 
@@ -812,8 +829,8 @@ ES.creator = (function () {
   function randomAll() {
     setup = blankSetup();
     setup.difficulty = U.pick(D.DIFFICULTIES.filter(function (d) { return !d.cheat; })).id;
-    setup.mode = U.pick(D.MODES).id;
-    if (setup.mode === 'legend') setup.legendId = U.pick(D.LEGENDS).id;
+    setup.mode = window.__DEV_LEGEND ? 'legend' : U.pick(D.MODES).id;
+    if (setup.mode === 'legend') setup.legendId = window.__DEV_LEGEND || U.pick(D.LEGENDS).id;
     setup.origin = U.pick(D.ORIGINS).id;
     setup.talentDirections = U.pickMany(D.TALENT_DIRECTIONS, U.randInt(2, 3)).map(function (d) { return d.id; });
     setup.talents = rollTalents();
@@ -835,8 +852,12 @@ ES.creator = (function () {
       ? D.LEGENDS.filter(function (l) { return l.id === setup.legendId; })[0].positionId
       : U.pick(D.POSITIONS).id;
     setup.city = U.pick(D.CITIES_CN.concat(D.CITIES_GLOBAL));
-    setup.timeline = U.pick(D.TIMELINES);
-    setup.clubId = U.pick(D.CLUBS).id;
+    setup.timeline = window.__DEV_TIMELINE
+      ? (D.TIMELINES.filter(function (x) { return x.id === window.__DEV_TIMELINE; })[0] || U.pick(D.TIMELINES))
+      : U.pick(D.TIMELINES);
+    setup.clubId = window.__DEV_CLUB
+      ? (D.CLUBS.filter(function (x) { return x.id === window.__DEV_CLUB; })[0] || U.pick(D.CLUBS)).id
+      : U.pick(D.CLUBS).id;
     const d = D.DIFFICULTIES.filter(function (x) { return x.id === setup.difficulty; })[0];
     setup.ovrTarget = Math.round((d.mods.ovrMin + d.mods.ovrMax) / 2);
     setup.talentRollsLeft = d.mods.rerolls;

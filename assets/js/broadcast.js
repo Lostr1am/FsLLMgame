@@ -56,7 +56,7 @@ ES.broadcast = (function () {
     }
     const myTeam = [me].concat(mates);
 
-    /* 对手：按其 2025 阵容与资源分级生成总评（N.6：一线主力 70—80 / 赛区明星 80—88） */
+    /* 对手：按其该时间线年份的阵容与资源分级生成总评（N.6：一线主力 70—80 / 赛区明星 80—88） */
     const base = opp.tier === 'T0' ? 84 : opp.tier === 'T1' ? 76 : 68;
     const theirTeam = (opp.roster && opp.roster.length ? opp.roster : ['选手A', '选手B', '选手C', '选手D', '选手E']).map(function (nm, i) {
       const p = D.POSITIONS[i % D.POSITIONS.length];
@@ -366,8 +366,8 @@ ES.broadcast = (function () {
     if (win && me.k >= 25) effects.res.fans = (effects.res.fans || 0) + 3;
     ES.narrative.applyEffects(effects, { silent: true });
     ES.state.pushLog(S, 'match', '比赛结束：' + (win ? '胜利' : '失利') + ' vs ' + live.opp.short + ' · ' + live.map + ' ' + live.scoreMe + ':' + live.scoreThem + ' · ' + S.profile.tag + ' ' + kda + ' · ACS ' + acs);
-    let row = S.stats.seasonRows.filter(function (r) { return r.season === 'S' + S.time.season; })[0];
-    if (!row) { row = { season: 'S' + S.time.season, club: S.club.short, matches: 0, kda: '0.00', kp: '—', dpm: '—', ovr: ES.state.ovr(S), honor: '进行中' }; S.stats.seasonRows.push(row); }
+    let row = S.stats.seasonRows.filter(function (r) { return r.season === (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year; })[0];
+    if (!row) { row = { season: (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year, club: S.club.short, matches: 0, kda: '0.00', kp: '—', dpm: '—', ovr: ES.state.ovr(S), honor: '进行中' }; S.stats.seasonRows.push(row); }
     row.matches = S.stats.matches;
     row.kda = ((S.stats.kills + S.stats.assists) / Math.max(1, S.stats.deaths)).toFixed(2);
     row.kp = me.fk + ' 次首杀';

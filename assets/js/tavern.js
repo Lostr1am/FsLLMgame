@@ -436,12 +436,15 @@ ES.tavern = (function () {
   function seedFromGame() {
     const books = [];
     /* ① 俱乐部资料（附录Q） */
-    const clubBook = { id: 'book-clubs', name: 'VCT 俱乐部资料（附录Q）', description: '46 支联赛队伍：席位、城市、风格、2025 阵容、荣誉', recursiveScanning: false, caseSensitive: false, matchWholeWords: false, createdAt: Date.now(), updatedAt: Date.now(), entries: [] };
+    const clubBook = { id: 'book-clubs', name: 'VCT 俱乐部资料（附录Q）', description: '46 支联赛队伍：席位、城市、风格、2024—2026 逐年阵容、荣誉', recursiveScanning: false, caseSensitive: false, matchWholeWords: false, createdAt: Date.now(), updatedAt: Date.now(), entries: [] };
     D.CLUBS.forEach(function (c, i) {
       clubBook.entries.push(makeEntry({
         bookId: clubBook.id, keys: [c.name, c.short, c.city].filter(Boolean), content:
           '【' + c.name + '（' + c.short + '）】' + c.region + ' 赛区 · ' + c.city + ' · ' + c.tier + ' · ' + c.seat + '。\n风格：' + c.style +
-          '\n2025 阵容：' + (c.roster || []).join('、') + '\n荣誉：' + (c.honors || '—') + '\n剧情线：' + (c.line || '—'), order: i + 10
+          '\n2024 阵容：' + (((c.rosters || {})['2024']) || c.roster || []).join('、') +
+          '\n2025 阵容：' + (((c.rosters || {})['2025']) || c.roster || []).join('、') +
+          '\n2026 阵容：' + (((c.rosters || {})['2026']) || c.roster || []).join('、') +
+          '\n荣誉：' + (c.honors || '—') + '\n剧情线：' + (c.line || '—'), order: i + 10
       }));
     });
     books.push(clubBook);

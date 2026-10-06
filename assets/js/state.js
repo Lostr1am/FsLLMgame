@@ -15,18 +15,30 @@ ES.state = (function () {
   function on(evt, fn) { (listeners[evt] = listeners[evt] || []).push(fn); }
   function emit(evt, payload) { (listeners[evt] || []).forEach(function (fn) { try { fn(payload); } catch (e) { console.warn(e); } }); }
 
-  /* ── 赛季阶段（第18章） ── */
+  /* ── 赛季阶段（第18章；按年份区分：2023 无联赛，2024 起走赛季日历） ── */
   const PHASES = [
-    { id: 'beta', name: '封测期', from: 1, to: 2, desc: '版本未定，百废待兴' },
-    { id: 'scout', name: '青训选拔期', from: 3, to: 3, desc: '各队开门选人，试训密集' },
-    { id: 'league', name: '第一联赛期', from: 4, to: 7, desc: '启点赛 / 常规赛 / 季后赛' },
+    { id: 'beta', name: '封测期', from: 1, to: 6, desc: '国服封测，无联赛，网吧与排位阶段' },
+    { id: 'launch', name: '开服首日', from: 7, to: 12, desc: '国服公测，俱乐部抢人建队' },
+    { id: 'preseason', name: '季前休赛期', from: 1, to: 2, desc: '启点赛前的休整与转会补强' },
+    { id: 'scout', name: '青训选拔期', from: 3, to: 3, desc: '青训营与挑战者赛集中招新' },
+    { id: 'league', name: '第一联赛期', from: 4, to: 7, desc: '常规赛与季后赛' },
     { id: 'break', name: '休赛期', from: 8, to: 8, desc: '转会窗口与休整' },
     { id: 'worlds', name: '世界冠军赛期', from: 9, to: 11, desc: '大师赛与全球冠军赛' },
     { id: 'winter', name: '冬歇转会期', from: 12, to: 12, desc: '合同年谈判与阵容重组' }
   ];
-  function phaseOf(month) {
-    for (let i = 0; i < PHASES.length; i++) { if (month >= PHASES[i].from && month <= PHASES[i].to) return PHASES[i]; }
-    return PHASES[0];
+  const SEASON_OF_YEAR = { 2023: 0, 2024: 1, 2025: 2, 2026: 3, 2027: 4, 2028: 5 };
+  function seasonLabel(n) { return Number(n) <= 0 ? '国服元年' : 'S' + n; }
+  function seasonOfYear(year, fallback) {
+    if (SEASON_OF_YEAR[year] !== undefined) return SEASON_OF_YEAR[year];
+    const n = parseInt(String(fallback || 'S1').replace(/\D/g, ''), 10);
+    return isNaN(n) ? 1 : n;
+  }
+  /** 年份感知的阶段：2023 只有封测/开服；2024 起走赛季日历 */
+  function phaseOf(month, year) {
+    const y = Number(year) || 2024;
+    if (y <= 2023) return month >= 7 ? PHASES[1] : PHASES[0];
+    for (let i = 2; i < PHASES.length; i++) { if (month >= PHASES[i].from && month <= PHASES[i].to) return PHASES[i]; }
+    return PHASES[2];
   }
 
   /* ── 定位 ── */
@@ -34,15 +46,41 @@ ES.state = (function () {
     return D.POSITIONS.filter(function (p) { return p.id === s.positionId; })[0] || D.POSITIONS[0];
   }
 
+  /* ── 引用解析（建档向导可能传 id，也可能传整个数据对象） ── */
+  function byId(list, v) {
+    if (!v) return null;
+    if (typeof v === 'string') return list.filter(function (x) { return x.id === v; })[0] || null;
+    return list.filter(function (x) { return x.id === v.id; })[0] || v;
+  }
+  function resolveTimeline(v) { return byId(D.TIMELINES, v) || D.TIMELINES[0]; }
+  function resolveCity(v) { return byId(D.CITIES_CN.concat(D.CITIES_GLOBAL), v) || null; }
+  function resolveClub(v) { return v ? byId(D.CLUBS, v) : null; }
+  /** 附录 Q.6：先定位年份，再取该年份列的阵容 */
+  function rosterYearFor(tl) {
+    const r = String((tl && tl.roster) || '2025');
+    if (r.indexOf('2026') === 0) return '2026';
+    if (r === '2023') return '2024';   /* 2023 尚无联赛，以 2024 名单作建队基准 */
+    return r;
+  }
+
+  /* ── 旧存档迁移（v2.3 修复：赛季标签与年份感知阶段） ── */
+  function migrate(st) {
+    if (!st || !st.time) return st;
+    if (st.time.seasonLabel === undefined) st.time.seasonLabel = seasonLabel(st.time.season);
+    if (st.time.year === undefined) st.time.year = 2024 + Math.max(0, (st.time.season || 1) - 1);
+    const ph = phaseOf(st.time.month, st.time.year);
+    if (st.time.phaseId !== ph.id) { st.time.phase = ph.name; st.time.phaseId = ph.id; }
+    return st;
+  }
   /* ── 建档 ── */
   function create(setup) {
     const diff = D.DIFFICULTIES.filter(function (d) { return d.id === setup.difficulty; })[0] || D.DIFFICULTIES[1];
     const origin = D.ORIGINS.filter(function (o) { return o.id === setup.origin; })[0] || D.ORIGINS[0];
-    const tl = D.TIMELINES.filter(function (t) { return t.id === setup.timeline; })[0] || D.TIMELINES[0];
-    const city = setup.city;
+    const tl = resolveTimeline(setup.timeline);
+    const city = resolveCity(setup.city);
     const legend = setup.mode === 'legend' ? D.LEGENDS.filter(function (l) { return l.id === setup.legendId; })[0] : null;
     const pos = D.POSITIONS.filter(function (p) { return p.id === (setup.positionId || (legend && legend.positionId)); })[0] || D.POSITIONS[0];
-    const clubDef = D.CLUBS.filter(function (c) { return c.id === setup.clubId; })[0] || null;
+    const clubDef = resolveClub(setup.clubId);
 
     /* 属性：传奇 → 出身 → 素人基线；再叠加时间线 / 城市 / 难度取点 */
     const attrs = {};
@@ -141,8 +179,9 @@ ES.state = (function () {
     special.antiThreat = U.clamp(special.antiThreat + (traitRes.antiThreat || 0), 0, 100);
 
     const month = tl.month, day = tl.day;
-    const phase = phaseOf(month);
-    const club = makeClub(setup, origin, legend, clubDef, attrs, special);
+    const phase = phaseOf(month, tl.year);
+    const seasonNum = seasonOfYear(tl.year, tl.season);
+    const club = makeClub(setup, origin, legend, clubDef, attrs, special, tl);
 
     const state = {
       v: 2,
@@ -188,7 +227,13 @@ ES.state = (function () {
         trainStreak: 0, restStreak: 0, scrims: 0, matches: 0
       },
       scene: { chapterId: tl.startNode || 'ch1_beta', nodeId: tl.startNode || 'ch1_beta', history: [], turnText: [] },
-      time: { season: (parseInt((tl.season || 'S1').replace(/\D/g, ''), 10) || 1), year: tl.year, month: month, day: day, week: 1, clock: '21:40', phase: phase.name, phaseId: phase.id, turn: 0, dayCount: 0 },
+      time: {
+        season: seasonNum, seasonLabel: seasonLabel(seasonNum), year: tl.year,
+        month: month, day: day, week: 1, clock: '21:40',
+        /* 开局阶段以所选时间线为准，之后由 phaseOf(month, year) 推进 */
+        phase: tl.phase || phase.name, phaseId: phaseOf(month, tl.year).id,
+        turn: 0, dayCount: 0
+      },
       stats: { matches: 0, wins: 0, losses: 0, kills: 0, deaths: 0, assists: 0, bestKills: 0, bestFK: 0, bestClutch: 0, aces: 0, choices: 0, seasonRows: [], honorList: [], ovrHistory: [] },
       settings: {
         textSpeed: 62, storyLength: 'normal', temperature: 70, showRoll: true, pity: true,
@@ -243,8 +288,14 @@ ES.state = (function () {
   }
 
   /* ── 俱乐部（附录Q 数据 + 合同体系 附录V.2） ── */
-  function makeClub(setup, origin, legendary, def, attrs, special) {
+  function makeClub(setup, origin, legendary, def, attrs, special, tl) {
     if (!def) return null;
+    const ry = rosterYearFor(tl);
+    const rosterAll = (def.rosters && def.rosters[ry]) ? def.rosters[ry].slice() : (def.roster || []).slice();
+    const year = (tl && tl.year) || 2024;
+    const rosterNote = (tl && tl.year <= 2023) ? year + ' · 建队期（以 2024 年阵容为基准）'
+      : (tl && tl.year >= 2027) ? year + ' · 演绎扩展（以 2026 年阵容为基准）'
+        : year + ' 赛季基准（' + ry + ' 年阵容）';
     const ovrGuess = attrs ? Math.round((attrs.aim + attrs.reaction + attrs.gameSense + attrs.mentality + attrs.comms) / 5) : 60;
     const baseByLevel = ovrGuess >= 90 ? 2000000 : ovrGuess >= 80 ? 300000 : ovrGuess >= 70 ? 50000 : ovrGuess >= 60 ? 20000 : 5000;
     const tierMul = { T0: 1.5, T1: 1.0, T2: 0.7 }[def.tier] || 1.0;
@@ -252,7 +303,8 @@ ES.state = (function () {
     const cityCost = setup.city && setup.city.bars ? setup.city.bars.cost : 6;
     return {
       id: def.id, name: def.name, short: def.short, region: def.region, city: def.city, tier: def.tier,
-      seat: def.seat, style: def.style, roster: (def.roster || []).slice(), honors: def.honors, line: def.line,
+      seat: def.seat, style: def.style, roster: rosterAll, rosters: def.rosters || {}, rosterYear: ry, rosterNote: rosterNote,
+      honors: def.honors, line: def.line,
       fansLabel: def.fans, env: def.env,
       league: 'VCT ' + (def.region === 'CN' ? 'CN' : def.region) + ' 联赛',
       role: null,
@@ -289,26 +341,37 @@ ES.state = (function () {
     add(Object.assign({}, U.pick(D.NPCS.rival), { role: '宿敌 · 同位置', type: 'rival', affection: U.randInt(8, 24), trust: U.randInt(5, 20) }));
     add(Object.assign({}, U.pick(D.NPCS.media), { role: '电竞记者', type: 'media', affection: U.randInt(28, 46), trust: U.randInt(25, 45) }));
 
-    /* 队友：优先按所选俱乐部的 2025 阵容（附录Q.2—Q.5）建档，缺失时退回虚构队友库 */
+    /* 队友：按所选俱乐部「该时间线年份」的阵容建档（附录 Q.6）；
+       自己若在名单中则不重复出现，其余补齐到 4 人，多余名单成员作为「轮换」保留 */
     const rawRoster = (state.club && state.club.roster) ? state.club.roster.slice() : [];
-    const roster = rawRoster.filter(function (nm) {
-      return nm && nm.toLowerCase() !== String(state.profile.tag || '').toLowerCase();
-    }).slice(0, 4);
-    if (roster.length >= 3) {
-      const order = D.POSITIONS.concat([D.POSITIONS[1]]);
-      roster.forEach(function (nm, i) {
-        const p = order[i % order.length];
-        add({
-          name: nm, tag: nm.slice(0, 7), role: '队友 · ' + p.name, positionId: p.id, type: 'teammate',
-          persona: '现实选手（' + (state.club.short || '') + ' 2025 阵容）：' + p.name + '位，按公开赛场形象设定；描写以其比赛 ID 与赛场表现为限，不涉及私生活与未公开信息。',
-          affection: U.clamp(state.special.teammateTrust + U.randInt(-10, 12), 10, 92),
-          trust: U.clamp(state.special.teammateTrust + U.randInt(-6, 14), 10, 92)
-        });
+    const myTag = String(state.profile.tag || '').toLowerCase();
+    const selfIdx = rawRoster.findIndex(function (nm) { return String(nm || '').toLowerCase() === myTag; });
+    const selfInRoster = selfIdx >= 0;
+    if (state.club) state.club.selfInRoster = selfInRoster;
+    if (selfInRoster) rawRoster.splice(selfIdx, 1);
+    const order = D.POSITIONS.concat([D.POSITIONS[1]]);
+    const starters = rawRoster.slice(0, 4);
+    const rotators = rawRoster.slice(4, 6);
+    const used = {};
+    const clubLabel = (state.club ? state.club.short : '俱乐部') + ' ' + (state.club && state.club.rosterNote ? state.club.rosterNote : '阵容');
+    starters.forEach(function (nm, i) {
+      const p = order[i % order.length];
+      used[String(nm).toLowerCase()] = 1;
+      add({
+        name: nm, tag: nm.slice(0, 7), role: '队友 · ' + p.name, positionId: p.id, type: 'teammate',
+        persona: '现实选手（' + clubLabel + '）：' + p.name + '位，按公开赛场形象设定；描写以其比赛 ID 与赛场表现为限，不涉及私生活与未公开信息。',
+        affection: U.clamp(state.special.teammateTrust + U.randInt(-10, 12), 10, 92),
+        trust: U.clamp(state.special.teammateTrust + U.randInt(-6, 14), 10, 92)
       });
-    } else {
-      const pool = D.TEAMMATE_POOL.filter(function (m) { return m.role.indexOf('替补') < 0; });
-      U.pickMany(pool, 4).forEach(function (m) {
+    });
+    /* 名单不足 4 人（或未选俱乐部）时，用虚构队友补齐，保证首发恒为 5 人 */
+    if (starters.length < 4) {
+      const pool = D.TEAMMATE_POOL.filter(function (m) {
+        return m.role.indexOf('替补') < 0 && !used[String(m.name).toLowerCase()];
+      });
+      U.pickMany(pool, 4 - starters.length).forEach(function (m) {
         const p = D.POSITIONS.filter(function (x) { return m.role.indexOf(x.name) >= 0; })[0] || D.POSITIONS[0];
+        used[String(m.name).toLowerCase()] = 1;
         add(Object.assign({}, m, {
           role: '队友 · ' + m.role, positionId: p.id, type: 'teammate',
           affection: U.clamp(state.special.teammateTrust + U.randInt(-12, 12), 10, 92),
@@ -316,9 +379,22 @@ ES.state = (function () {
         }));
       });
     }
-    /* 队内竞争者 */
-    const bench = D.TEAMMATE_POOL.filter(function (m) { return m.role.indexOf('替补') === 0; })[0];
-    if (bench) add(Object.assign({}, bench, { role: '队内竞争者', type: 'bench', affection: U.randInt(17, 36), trust: U.randInt(12, 32) }));
+    /* 名单里的第 5、6 人：作为轮换保留，避免「名单上的人不见了」 */
+    if (rotators.length) {
+      rotators.forEach(function (nm, i) {
+        const p = order[(starters.length + i) % order.length];
+        add({
+          name: nm, tag: nm.slice(0, 7), role: '轮换 · ' + p.name, positionId: p.id, type: 'bench',
+          persona: '现实选手（' + clubLabel + '）：' + p.name + '位轮换/替补，随赛季与大名单浮动。',
+          affection: U.clamp(state.special.teammateTrust - 6 + U.randInt(-8, 10), 8, 88),
+          trust: U.clamp(state.special.teammateTrust - 8 + U.randInt(-6, 12), 8, 86)
+        });
+      });
+    } else {
+      /* 名单没有多余成员时，保留一名虚构队内竞争者 */
+      const bench = D.TEAMMATE_POOL.filter(function (m) { return m.role.indexOf('替补') === 0; })[0];
+      if (bench) add(Object.assign({}, bench, { role: '队内竞争者', type: 'bench', affection: U.randInt(17, 36), trust: U.randInt(12, 32) }));
+    }
     /* 情缘候选 */
     U.pickMany(D.NPCS.partner, 2).forEach(function (p) {
       add(Object.assign({}, p, { role: '关系候选', type: 'partner', affection: U.randInt(25, 48), trust: U.randInt(30, 52) }));
@@ -359,7 +435,8 @@ ES.state = (function () {
 
   /* ── 时间 ── */
   function timeText(s) {
-    return s.time.season + ' 赛季 · ' + U.pad2(s.time.month) + '月' + U.pad2(s.time.day) + '日 ' + s.time.clock;
+    const sea = s.time.seasonLabel || seasonLabel(s.time.season);
+    return s.time.year + ' 年 · ' + sea + ' · ' + U.pad2(s.time.month) + '月' + U.pad2(s.time.day) + '日 ' + s.time.clock;
   }
   function statusMod(condition) {
     if (condition >= 90) return 2;
@@ -374,7 +451,11 @@ ES.state = (function () {
     for (let i = 0; i < days; i++) {
       s.time.day++; s.time.dayCount++;
       if (s.time.day > 28) { s.time.day = 1; s.time.month++; }
-      if (s.time.month > 12) { s.time.month = 1; s.time.season++; s.time.year++; }
+      if (s.time.month > 12) {
+        s.time.month = 1; s.time.year++;
+        s.time.season = seasonOfYear(s.time.year, 'S' + (s.time.season + 1));
+        s.time.seasonLabel = seasonLabel(s.time.season);
+      }
       /* 每日自然变化（第5章状态律 / 附录AW.2） */
       s.res.condition = U.clamp(s.res.condition - 0.8 + (s.attrs.stamina > 70 ? 0.3 : 0), 0, 100);
       s.res.hand = U.clamp(s.res.hand + (s.res.condition > 55 ? 0.6 : 0.15), 0, 100);
@@ -384,7 +465,7 @@ ES.state = (function () {
     }
     s.statuses = s.statuses.filter(function (st) { return st.turns > 0.05; });
     s.time.week = Math.min(4, Math.floor((s.time.day - 1) / 7) + 1);
-    const ph = phaseOf(s.time.month);
+    const ph = phaseOf(s.time.month, s.time.year);
     s.time.phase = ph.name; s.time.phaseId = ph.id;
     s.time.turn += 1;
     if (s.time.turn % 2 === 0 && s.club && s.club.signed) {
@@ -529,7 +610,8 @@ ES.state = (function () {
       const def = pool.length ? U.pick(pool) : D.CLUBS[0];
       s.club = Object.assign({}, s.club, {
         id: def.id, name: def.name, short: def.short, region: def.region, city: def.city, tier: def.tier,
-        seat: def.seat, style: def.style, roster: (def.roster || []).slice(), honors: def.honors, line: def.line,
+        seat: def.seat, style: def.style, roster: rosterAll, rosters: def.rosters || {}, rosterYear: ry, rosterNote: rosterNote,
+      honors: def.honors, line: def.line,
         salary: Math.round(s.club.salary * (action === 'transfer_t0' ? 1.9 : 1.35)),
         buyout: Math.round(s.club.buyout * 1.4), signed: true, bond: 10,
         contractNote: action === 'transfer_t0' ? 'T0 豪门转会' : '重建核心'
@@ -820,7 +902,8 @@ ES.state = (function () {
   function loadSettings() { const store = storage(); return store.settings || null; }
 
   return {
-    PHASES: PHASES, phaseOf: phaseOf, create: create, buildTalent: buildTalent, positionOf: positionOf,
+    PHASES: PHASES, phaseOf: phaseOf, create: create, migrate: migrate,
+    seasonLabel: seasonLabel, seasonOfYear: seasonOfYear, rosterYearFor: rosterYearFor, buildTalent: buildTalent, positionOf: positionOf,
     apply: apply, effective: effective, train: train, statusMod: statusMod,
     ovr: ovr, ovrDetail: ovrDetail, level: level, nextLevel: nextLevel, breakthroughRate: breakthroughRate,
     marketValue: marketValue, marketDetail: marketDetail, bondOf: bondOf, labelOf: labelOf,

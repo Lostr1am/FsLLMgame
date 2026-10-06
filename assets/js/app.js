@@ -211,6 +211,7 @@ ES.app = (function () {
 
   function startGame(state, isNew) {
     S = state;
+    if (ES.state.migrate) ES.state.migrate(state);
     /* 合并设置 */
     Object.keys(settings).forEach(function (k) {
       if (state.settings && state.settings[k] !== undefined) settings[k] = state.settings[k];
@@ -526,6 +527,12 @@ ES.app = (function () {
     if (raw.indexOf('dev:') !== 0) return false;
     const parts = raw.slice(4).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
     const target = parts.shift() || 'creator';
+    /* 深链覆盖：tl:<时间线> / cl:<俱乐部> / lg:<传奇选手> */
+    parts.forEach(function (p) {
+      if (p.indexOf('tl:') === 0) window.__DEV_TIMELINE = p.slice(3);
+      if (p.indexOf('cl:') === 0) window.__DEV_CLUB = p.slice(3);
+      if (p.indexOf('lg:') === 0) window.__DEV_LEGEND = p.slice(3);
+    });
     if (target === 'creator') {
       gotoCreator();
     } else {
@@ -582,6 +589,10 @@ ES.app = (function () {
             case 'broadcast': openBroadcast(); break;
             case 'tavern': setUiMode('tavern'); break;
             case 'api': setUiMode('tavern'); ES.tavern.openApi(); break;
+            case 'squad': openContract(); setTimeout(function () { const b = U.$('[data-pane="contract-squad"]'); if (b) b.click(); }, 300); break;
+            case 'clubpane': if (ES.panels.selectDash) ES.panels.selectDash('club'); break;
+            case 'attrspane': if (ES.panels.selectDash) ES.panels.selectDash('attrs'); break;
+            case 'dossierhist': openDossier(); setTimeout(function () { const b = U.$('[data-dtab="dossier-hist"]'); if (b) b.click(); }, 300); break;
             case 'narrative': setUiMode('narrative'); break;
             case 'tvbooks': setUiMode('tavern'); ES.tavern.openLorebook(); break;
             case 'tvpreset': setUiMode('tavern'); ES.tavern.openPreset(); break;

@@ -137,7 +137,7 @@ ES.panels = (function () {
     if (sig === railSig) return;
     const prev = railSig ? railSig.split("|") : null;
     railSig = sig;
-    const phaseInfo = ES.state.phaseOf(S.time.month);
+    const phaseInfo = ES.state.phaseOf(S.time.month, S.time.year);
     const phasePct = Math.round(((S.time.month - phaseInfo.from + 1) / (phaseInfo.to - phaseInfo.from + 1)) * 100);
 
     host.innerHTML =
@@ -146,7 +146,7 @@ ES.panels = (function () {
         '<div class="rail-clock">' +
           '<span class="rc-time">' + U.pad2(S.time.month) + '月' + U.pad2(S.time.day) + '日 ' + S.time.clock + '</span>' +
           '<span class="rc-phase">' + U.icon("pulse", "icon-xs") + S.time.phase + ' · 第 ' + S.time.week + ' 周</span>' +
-          '<span class="tiny dim">' + S.time.season + ' 赛季 · ' + S.time.year + ' 年 · 回合 ' + S.time.turn + '</span>' +
+          '<span class="tiny dim">' + S.time.year + ' 年 · ' + (S.time.seasonLabel || ('S' + S.time.season)) + ' · 回合 ' + S.time.turn + '</span>' +
           '<span class="rc-phase-bar"><i style="width:' + phasePct + '%"></i></span>' +
         '</div>' +
         '<div class="hairline"></div>' +
@@ -528,7 +528,8 @@ ES.panels = (function () {
           '<div class="between small"><span class="dim">联赛排名</span><span class="mono">第 ' + (S.club ? S.club.rank : "—") + ' / 12</span></div>' +
           '<div class="between small"><span class="dim">赛季预期</span><span class="mono">' + U.esc(S.club ? S.club.expectation : "—") + '</span></div>' +
           '<div class="between small"><span class="dim">队伍羁绊</span><span class="mono">' + U.esc(bond.level.name) + ' +' + Math.round(bond.level.bonus * 100) + '%</span></div>' +
-          '<div class="between small"><span class="dim">2025 阵容</span><span class="tiny dim-2" style="max-width:62%;text-align:right">' + U.esc(S.club ? (S.club.roster || []).join("、") : "—") + '</span></div>' +
+          '<div class="between small"><span class="dim">阵容（' + U.esc(S.club && S.club.rosterYear ? S.club.rosterYear : "—") + '）</span><span class="tiny dim-2" style="max-width:62%;text-align:right">' + U.esc(S.club ? (S.club.roster || []).join("、") : "—") + '</span></div>' +
+          '<div class="tiny dim-2" style="margin-top:2px">' + U.esc(S.club && S.club.rosterNote ? S.club.rosterNote : "") + '</div>' +
         '</div>' +
         '<div class="hairline"></div>' +
         '<div class="tiny dim-2">' + U.esc(S.club ? (S.club.style + " · " + (S.club.line || "")) : "") + '</div>' +
@@ -753,7 +754,7 @@ ES.panels = (function () {
 
     U.$('#dossier-timeline').innerHTML = buildCareerTimeline();
     U.$('#dossier-stats-body').innerHTML = (S.stats.seasonRows.length ? S.stats.seasonRows : [{
-      season: 'S' + S.time.season, club: S.club.short, matches: S.stats.matches, kda: kdaOf(S), kp: '—', dpm: '—', ovr: ovr, honor: '生涯进行中'
+      season: (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year, club: S.club.short, matches: S.stats.matches, kda: kdaOf(S), kp: '—', dpm: '—', ovr: ovr, honor: '生涯进行中'
     }]).map(function (r) {
       return '<tr><td class="mono">' + U.esc(r.season) + '</td><td>' + U.esc(r.club) + '</td><td class="num">' + r.matches + '</td>' +
         '<td class="num hl">' + U.esc(r.kda) + '</td><td class="num">' + U.esc(r.kp) + '</td><td class="num">' + U.esc(r.dpm) + '</td>' +
@@ -959,7 +960,13 @@ ES.panels = (function () {
     }).join('') +
       '<div class="alert" data-tone="warn">' + U.icon('warn') + '<div>未达成的主线目标将影响赛季末的续约报价与教练信任。</div></div>';
 
-    U.$('#contract-squad-list').innerHTML = S.relations.filter(function (r) { return r.type === 'teammate' || r.type === 'bench' || r.type === 'coach'; }).map(function (r) {
+    const selfRow = '<div class="lrow" data-self="1" style="border-color:var(--accent-40)">' +
+      '<span class="lrow-ava" style="color:var(--accent);border-color:var(--accent-40)">' + U.esc(S.profile.name.slice(0, 1)) + '</span>' +
+      '<span class="lrow-main"><span class="lrow-name">' + U.esc(S.profile.name) + '<span class="tag" data-tone="cyan" style="margin-left:6px">你</span>' +
+      '<span class="tiny dim mono"> ' + U.esc(S.profile.tag) + '</span></span>' +
+      '<span class="lrow-sub">' + U.esc(ES.state.positionOf(S).name) + ' · 首发' + (S.club && S.club.selfInRoster ? ' · 名单内' : ' · 名单外（青训/试训）') + '</span></span>' +
+      '<span class="lrow-side"><span class="mono small">总评 ' + ES.state.ovr(S) + '</span></span></div>';
+    U.$('#contract-squad-list').innerHTML = selfRow + S.relations.filter(function (r) { return r.type === 'teammate' || r.type === 'bench' || r.type === 'coach'; }).map(function (r) {
       return '<button type="button" class="lrow" data-npc="' + r.id + '">' +
         '<span class="lrow-ava">' + U.esc(r.name.slice(0, 1)) + '</span>' +
         '<span class="lrow-main"><span class="lrow-name">' + U.esc(r.name) + '<span class="tiny dim mono">' + U.esc(r.tag) + '</span></span>' +
@@ -1119,7 +1126,7 @@ ES.panels = (function () {
   function renderCalendar() {
     if (!S) return;
     const month = ((S.time.month - 1 + calOffset) % 12 + 12) % 12 + 1;
-    U.$('#calendar-sub').textContent = 'S' + S.time.season + ' · ' + S.time.year + ' 年 ' + month + ' 月 · ' + S.time.phase;
+    U.$('#calendar-sub').textContent = (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year + ' 年 ' + month + ' 月 · ' + S.time.phase;
     const head = ['一', '二', '三', '四', '五', '六', '日'].map(function (d) { return '<div class="cal-head">' + d + '</div>'; }).join('');
     const rnd = U.makeRng(month * 317 + S.time.season);
     let cells = '';
@@ -1311,6 +1318,11 @@ ES.panels = (function () {
     renderCheat(); renderRail(); renderPanes(); ES.panels.updateTopbar();
     U.toast({ tone: "gold", icon: "terminal", title: "作弊指令已执行", msg: "成就将继续标记为「作弊获得」。" });
   }
+  function selectDash(id) {
+    dashTab = id;
+    U.$$('[data-dash]').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-dash') === id ? 'true' : 'false'); });
+    renderPanes();
+  }
   /* ══════════ 对外入口 ══════════ */
   function bind(state) {
     S = state;
@@ -1328,7 +1340,7 @@ ES.panels = (function () {
   }
   function updateTopbar() {
     if (!S) return;
-    U.$('#tb-season').textContent = 'S' + S.time.season + ' · ' + S.time.year;
+    U.$('#tb-season').textContent = (S.time.seasonLabel || ('S' + S.time.season)) + ' · ' + S.time.year;
     U.$('#tb-time').textContent = U.pad2(S.time.month) + '/' + U.pad2(S.time.day) + ' ' + S.time.clock;
     U.$('#tb-phase').textContent = S.time.phase;
     U.$('#tb-ovr').textContent = ES.state.ovr(S);
@@ -1356,6 +1368,7 @@ ES.panels = (function () {
     renderAchievements: renderAchievements, renderNews: renderNews, renderNpc: renderNpc,
     renderContract: renderContract, renderRomance: renderRomance, renderSchedule: renderSchedule,
     renderTalentModal: renderTalentModal, renderCheat: renderCheat, applyCheat: applyCheat,
+    selectDash: selectDash,
     renderCalendar: renderCalendar, renderMedia: renderMedia, updateTopbar: updateTopbar,
     renderTicker: renderTicker, radarSvg: radarSvg, sparklineSvg: sparklineSvg, trendValues: trendValues,
     attrName: attrName, stateRef: stateRef, getDashTab: getDashTab, mountDashboard: mountDashboard,
