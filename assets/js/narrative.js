@@ -658,6 +658,8 @@ ES.narrative = (function () {
       '4. 玩家是 17—19 岁的年轻选手，起点低、资源少；不要无理由地给他大赛冠军或顶级合同。',
       '5. 判定的成败由系统给出（见【判定结果】）；有判定时，剧情必须体现该结果，不要自行改变成败。',
       '6. 每次回复必须包含 <maintext> 与**恰好 3 个** <option>；玩家另有「自由行动」输入框，不要替他写自由行动选项。',
+      '7. 所有剧情正文、事件结算与选项**必须写在最终回答里**（maintext / sum / option 标签内）。严禁把正文写进思考过程；思考过程要么不输出，要么只写一两句极简要点。',
+      '8. 若你被要求先思考：先想完再输出，最终回答里仍必须完整重复正文。只有思考、没有正文的回复视为无效。',
       '',
       '<文风>（必须遵守，来源：融合预设文风规则）',
       (D.STORY_STYLE || []).join('\n'),
@@ -685,6 +687,7 @@ ES.narrative = (function () {
       return msgs;
     }
     msgs.push({ role: 'user', content: actionText ? ('我的行动：' + actionText) : '（继续推进，不要替我决定行动）' });
+    msgs.push({ role: 'system', content: '【输出纪律】直接输出 <maintext> 正文与 3 个 <option>，不要输出思考过程；正文不许只留在思考里。' });
     return msgs;
   }
 
@@ -783,14 +786,20 @@ ES.narrative = (function () {
       live.done(parsed.maintext);
       const blocks = [];
       const thinkText = parsed.thinking || reasonText;
-      if (thinkText) blocks.push({ t: 'think', text: esc2html(thinkText.slice(0, 4000)) });
-      else if (rawText) blocks.push({ t: 'think', text: '<b>模型原始响应</b>（未按标签格式输出，前 1200 字）<br>' + esc2html(rawText.slice(0, 1200)) });
+      if (!opts.fromTavern) {
+        /* 思考链与「原始响应」只在叙事区展示；酒馆楼层只留正文与结算 */
+        if (thinkText) blocks.push({ t: 'think', text: esc2html(thinkText.slice(0, 4000)) });
+        else if (rawText && !parsed.sum && !(parsed.options || []).length) {
+          blocks.push({ t: 'think', text: '<b>模型原始响应</b>（未按标签格式输出，前 1200 字）<br>' + esc2html(rawText.slice(0, 1200)) });
+        }
+      }
       if (parsed.sum) blocks.push({ t: 'sum', text: esc2html(parsed.sum).replace(/\n/g, '<br>') });
       const applied = ES.state.applyStoryVars(S, parsed.varsCommands.merge);
       if (applied && applied.notes.length) {
         blocks.push({ t: 'sum', text: '<b>引擎结算</b><br>' + applied.notes.map(function (n) { return '· ' + U.esc(n); }).join('<br>') });
       }
-      blocks.push({ t: 'panel', title: '职业面板 · ' + S.time.year + ' 年 ' + S.time.month + ' 月', text: panelLines(S).slice(1).map(function (x) { return U.esc(x.replace(/^· /, '')); }).join('<br>') });
+      /* 单一界面：楼层里不再重复贴面板，右侧变量看板已有完整数据 */
+      if (!opts.fromTavern) blocks.push({ t: 'panel', title: '职业面板 · ' + S.time.year + ' 年 ' + S.time.month + ' 月', text: panelLines(S).slice(1).map(function (x) { return U.esc(x.replace(/^· /, '')); }).join('<br>') });
       if (applied && applied.advanced > 0) {
         ES.audio.play('levelup');
         U.toast({ tone: 'info', icon: 'calendar', title: '剧情推进了 ' + applied.advanced + ' 天', msg: applied.from.month + ' 月 ' + applied.from.day + ' 日 → ' + applied.to.month + ' 月 ' + applied.to.day + ' 日 · ' + S.time.phase, duration: 7000 });

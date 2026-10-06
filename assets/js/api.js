@@ -18,12 +18,12 @@ ES.api = (function () {
     primary: {
       baseUrl: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini',
       temperature: 0.95, maxTokens: 1200, timeout: 90000, stream: true, headers: '',
-      topP: 0.95, presencePenalty: 0.3, frequencyPenalty: 0, noThinking: false
+      topP: 0.95, presencePenalty: 0.3, frequencyPenalty: 0, noThinking: true
     },
     secondary: {
       enabled: false, baseUrl: 'https://api.deepseek.com/v1', apiKey: '', model: 'deepseek-chat',
       temperature: 0.3, maxTokens: 400, timeout: 60000, stream: false, headers: '',
-      topP: 0.5, presencePenalty: 0, frequencyPenalty: 0
+      topP: 0.5, presencePenalty: 0, frequencyPenalty: 0, noThinking: true
     }
   };
 
@@ -33,12 +33,20 @@ ES.api = (function () {
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function load() {
+    const CONFIG_V = 2;   /* v2：默认关闭思考，仅输出正文 */
     try {
       const raw = localStorage.getItem(KEY);
       cfg = raw ? Object.assign(clone(DEFAULTS), JSON.parse(raw)) : clone(DEFAULTS);
       cfg.primary = Object.assign(clone(DEFAULTS.primary), cfg.primary || {});
       cfg.secondary = Object.assign(clone(DEFAULTS.secondary), cfg.secondary || {});
     } catch (e) { cfg = clone(DEFAULTS); }
+    /* 一次性迁移：旧配置没有 noThinking 或为 false 的，统一切到「只输出正文」 */
+    if (!cfg.v || cfg.v < CONFIG_V) {
+      if (cfg.primary) cfg.primary.noThinking = true;
+      if (cfg.secondary) cfg.secondary.noThinking = true;
+      cfg.v = CONFIG_V;
+      try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {}
+    }
     return cfg;
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }
@@ -81,6 +89,7 @@ ES.api = (function () {
       b.enable_thinking = false;
       b.reasoning_effort = 'none';
       b.chat_template_kwargs = { enable_thinking: false };
+      b.thinking = { type: 'disabled' };
     }
     return b;
   }
@@ -172,6 +181,13 @@ ES.api = (function () {
       clearTimeout(timer);
       if (!res.ok) {
         return res.text().then(function (txt) {
+          if ((res.status === 400 || res.status === 422) && t.noThinking) {
+            return fetch(urlFor(t), { method: 'POST', headers: headersFor(t), signal: ctrl.signal, body: JSON.stringify(minimalBody(t, messages, false)) })
+              .then(function (r2) {
+                if (!r2.ok) throw new Error('HTTP ' + r2.status + ' ' + (txt || '').slice(0, 200));
+                return r2.json();
+              });
+          }
           throw new Error('HTTP ' + res.status + ' ' + (txt || '').slice(0, 200));
         });
       }
@@ -188,6 +204,12 @@ ES.api = (function () {
   }
 
   /* ── 流式请求 ── */
+  /** 去掉可能不被端点接受的扩展字段 */
+  function minimalBody(t, messages, stream) {
+    const b = bodyFor(Object.assign({}, t, { noThinking: false }), messages, stream);
+    delete b.thinking; delete b.enable_thinking; delete b.reasoning_effort; delete b.chat_template_kwargs;
+    return b;
+  }
   function chatStream(target, t, messages, opts) {
     const ctrl = new AbortController();
     const timer = setTimeout(function () { ctrl.abort(); }, t.timeout || 90000);
@@ -203,7 +225,22 @@ ES.api = (function () {
       body: JSON.stringify(bodyFor(t, messages, true))
     }).then(function (res) {
       if (!res.ok) {
-        return res.text().then(function (txt) { throw new Error('HTTP ' + res.status + ' ' + (txt || '').slice(0, 200)); });
+        return res.text().then(function (txt) {
+          /* 端点不喜欢扩展字段（400/422）→ 去掉后再试一次 */
+          if ((res.status === 400 || res.status === 422) && t.noThinking && opts && !opts.__retried) {
+            const again = Object.assign({}, opts, { __retried: true });
+            return fetch(urlFor(t), { method: 'POST', headers: headersFor(t), signal: ctrl.signal, body: JSON.stringify(minimalBody(t, messages, true)) })
+              .then(function (r2) {
+                if (!r2.ok) throw new Error('HTTP ' + r2.status + ' ' + (txt || '').slice(0, 200));
+                return r2.json().catch(function () { return {}; }).then(function (j) {
+                  const x = extractText(j) || salvageText(txt);
+                  if (x) onDelta(x);
+                  return x;
+                });
+              });
+          }
+          throw new Error('HTTP ' + res.status + ' ' + (txt || '').slice(0, 200));
+        });
       }
       if (!res.body || !res.body.getReader) return res.json().then(function (json) { const x = extractText(json); onDelta(x); return x; });
       const reader = res.body.getReader();
@@ -334,7 +371,7 @@ ES.api = (function () {
     KEY: KEY, DEFAULTS: DEFAULTS,
     config: config, setConfig: setConfig, save: save, reset: reset, clearKeys: clearKeys,
     isEnabled: isEnabled, mode: mode, routeFor: routeFor, chat: chat, test: test,
-    parseSseChunk: parseSseChunk, looksProtocol: looksProtocol, salvageText: salvageText, summaryPrompt: summaryPrompt,
+    parseSseChunk: parseSseChunk, looksProtocol: looksProtocol, salvageText: salvageText, minimalBody: minimalBody, summaryPrompt: summaryPrompt,
     getAudit: getAudit, getLastError: getLastError, friendlyError: friendlyError,
     urlFor: urlFor, bodyFor: bodyFor, headersFor: headersFor
   };

@@ -445,7 +445,7 @@ ES.tavern = (function () {
       books: [], presets: [], activeBookIds: [], activePresetId: 'preset-local',
       settings: {
         tags: DEFAULT_TAGS.slice(), opaqueTags: DEFAULT_OPAQUE.slice(),
-        formatPrompt: DEFAULT_FORMAT_PROMPT, thinkingDisplay: 'fold',
+        formatPrompt: DEFAULT_FORMAT_PROMPT, thinkingDisplay: 'hide',   /* 默认隐藏思考链，只显示正文 */
         streamSpeed: 12, autoScroll: true, lorebookScanDepth: 3, useSecondary: true, showVarsChips: true
       },
       floors: [], sessions: []
@@ -488,6 +488,8 @@ ES.tavern = (function () {
     if (!db.books || !db.books.length) seedFromGame();
     if (!db.presets || !db.presets.length) db.presets = [defaultPreset()];
     if (!db.card) db.card = blankDb().card;
+    /* 旧库迁移：默认不再显示思考链 */
+    if (!db.settings.thinkingDisplay || db.settings.thinkingDisplay === 'fold') db.settings.thinkingDisplay = 'hide';
     if (state) useSession(state);
     return db;
   }
