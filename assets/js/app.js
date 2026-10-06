@@ -247,22 +247,16 @@ ES.app = (function () {
     U.announce(name === 'creator' ? '进入角色创建向导' : name === 'main' ? '进入主界面' : '终端启动');
   }
 
+  /* 单一界面：酒馆楼层流是唯一的叙事界面（叙事模式已移除） */
   function setUiMode(mode) {
     if (!ES.tavern) return;
-    ES.tavern.setMode(mode);
+    ES.tavern.setMode('tavern');
     const screen = U.$('#screen-main');
-    if (screen) screen.setAttribute('data-ui', mode);
-    const lbl = U.$('#ui-mode-label');
-    if (lbl) lbl.textContent = mode === 'tavern' ? '叙事模式' : '酒馆模式';
+    if (screen) screen.setAttribute('data-ui', 'tavern');
     const panel = U.$('#tavern-panel');
-    if (panel) panel.classList.toggle('hidden', mode !== 'tavern');
-    U.toast({ tone: 'info', icon: 'message', title: mode === 'tavern' ? '已进入酒馆模式' : '已回到叙事模式',
-      msg: mode === 'tavern' ? '楼层流 · 世界书注入 · 变量快照回溯 · 标签流式解析' : '经典叙事区与抉择列表。', duration: 3200 });
+    if (panel) panel.classList.remove('hidden');
   }
-  function toggleUiMode() {
-    const cur = (ES.tavern && ES.tavern.uiMode) || 'narrative';
-    setUiMode(cur === 'tavern' ? 'narrative' : 'tavern');
-  }
+  function toggleUiMode() { setUiMode('tavern'); }
 
   function openCheat() {    if (!S || !S.cheat) {
       U.toast({ tone: 'warn', title: '当前不是作弊模式', msg: '作弊模式需在角色创建时选择。' });
@@ -294,6 +288,8 @@ ES.app = (function () {
     showScreen('main');
     ES.broadcast.setState(state);
     if (ES.tavern) ES.tavern.mount(state);
+    setUiMode('tavern');
+    syncBroadcastEntry();
     ES.broadcast.mount(state);
     ES.broadcast.bindOrderClicks();
     ES.saves.bind(state);
@@ -312,8 +308,8 @@ ES.app = (function () {
     const b = U.$('#btn-cheat-menu');
     if (b) b.classList.toggle('hidden', !(S && S.cheat));
   }
-
   function refreshUI() {
+    setTimeout(function () { if (typeof syncBroadcastEntry === 'function') syncBroadcastEntry(); }, 0);
     if (!S) return;
     ES.panels.updateTopbar();
     syncCheatEntry();
@@ -347,7 +343,22 @@ ES.app = (function () {
   function openSchedule() { ES.panels.renderSchedule(); U.openModal('modal-schedule'); }
   function openCalendar() { ES.panels.renderCalendar(); U.openModal('modal-calendar'); }
   function openMedia() { ES.panels.renderMedia(); U.openModal('modal-media'); }
-  function openBroadcast() { ES.broadcast.open({ fresh: !ES.broadcast.current() || ES.broadcast.current().ended }); }
+  function openBroadcast() {
+    /* 只有比赛日（赛程到点或剧情标记）才开放比赛推演 */
+    if (ES.broadcast.canPlay && !ES.broadcast.canPlay()) {
+      U.toast({ tone: 'warn', icon: 'calendar', title: '今天没有比赛', msg: ES.broadcast.gateHint(), duration: 6000 });
+      return;
+    }
+    ES.broadcast.open({ fresh: !ES.broadcast.current() || ES.broadcast.current().ended });
+  }
+  /** 入口按钮状态：非比赛日变灰并提示下一场 */
+  function syncBroadcastEntry() {
+    const btn = U.$('#btn-open-broadcast');
+    if (!btn) return;
+    const ready = !!(ES.broadcast && ES.broadcast.canPlay && ES.broadcast.canPlay());
+    btn.classList.toggle('is-off', !ready);
+    btn.setAttribute('data-tip', ready ? '进入比赛直播（B）· 今日比赛日' : (ES.broadcast.gateHint ? ES.broadcast.gateHint() : '当前没有已排定的比赛'));
+  }
   function openTalent() { ES.panels.renderTalentModal(); U.openModal('modal-talent'); }
 
   /* ══════════ 全局委托 ══════════ */
@@ -405,7 +416,7 @@ ES.app = (function () {
       '#btn-open-board': openBoard, '#btn-open-dossier': openDossier, '#btn-open-saves': openSaves,
       '#btn-open-saves-top': openSaves, '#btn-open-calendar': openCalendar, '#btn-open-broadcast': openBroadcast,
       '#btn-open-help': function () { U.openModal('modal-help'); },
-      '#btn-ui-mode': toggleUiMode,
+      '#btn-ui-mode': toggleUiMode,   /* 按钮已从界面移除，保留兼容 */
       '#btn-open-api': function () { if (ES.tavern) ES.tavern.openApi(); },
       '#btn-cheat-menu': openCheat,
       '#btn-open-help-bottom': function () { U.openModal('modal-help'); },
@@ -535,7 +546,7 @@ ES.app = (function () {
       else if (k === 'tab') { e.preventDefault(); toggleDashboard(); }
       else if (k === 'd') { openDossier(); }
       else if (k === 'x') { openCheat(); }
-      else if (k === 'v') { toggleUiMode(); }
+      else if (k === 'v') { /* 单一界面：不再切换 */ }
       else if (k === 's') { openSaves(); }
       else if (k === 'b') { openBroadcast(); }
       else if (k === 'c') { openCalendar(); }
@@ -664,7 +675,7 @@ ES.app = (function () {
               ES.api.save();
               installMockStory('reason');
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 500);
               break;
             }
             case 'aimock6': {
@@ -672,7 +683,7 @@ ES.app = (function () {
               ES.api.save();
               installMockStory('reasononly');
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 500);
               break;
             }
             case 'aimock3': {
@@ -680,7 +691,7 @@ ES.app = (function () {
               ES.api.save();
               installMockStory('plain');
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 500);
               break;
             }
             case 'aimock4': {
@@ -688,7 +699,7 @@ ES.app = (function () {
               ES.api.save();
               installMockStory('json');
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 500);
               break;
             }
             case 'aimock': {
@@ -696,7 +707,7 @@ ES.app = (function () {
               ES.api.save();
               installMockStory();
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 600);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 600);
               break;
             }
             case 'aimock2': {
@@ -704,8 +715,16 @@ ES.app = (function () {
               ES.api.save();
               installMockStory();
               if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
-              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 400);
-              setTimeout(function () { ES.narrative.choose(3); }, 5000);
+              setTimeout(function () { ES.tavern.send('（继续：按赛程与当前处境推进剧情）'); }, 400);
+              setTimeout(function () { ES.tavern.chooseOption(2); }, 5000);
+              break;
+            }
+            case 'matchday': {
+              const nm0 = ES.state.nextMatch(S);
+              if (nm0 && nm0.inDays > 0) ES.state.advanceTime(S, nm0.inDays);
+              if (ES.app.refreshUI) ES.app.refreshUI();
+              setTimeout(function () { if (typeof syncBroadcastEntry === 'function') syncBroadcastEntry(); }, 50);
+              U.toast({ tone: 'gold', icon: 'sword', title: '已推进到比赛日', msg: (ES.state.matchToday(S) || {}).text || '今日比赛', duration: 6000 });
               break;
             }
             case 'promo':
@@ -758,6 +777,11 @@ ES.app = (function () {
               openCheat();
               break;
             case 'bcplay':
+              if (!ES.broadcast.canPlay()) {
+                const nm1 = ES.state.nextMatch(S);
+                if (nm1 && nm1.inDays > 0) ES.state.advanceTime(S, nm1.inDays);
+                if (ES.app.refreshUI) ES.app.refreshUI();
+              }
               openBroadcast();
               setTimeout(function () {
                 const chip = U.$('#bc-orders [data-order]');

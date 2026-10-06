@@ -785,7 +785,7 @@ ES.tavern = (function () {
     const payload =
       '<thinking>' + thinkingTrace() + '</thinking>\n' +
       '<maintext>' + maintext + '</maintext>\n' +
-      '<option>' + choices.map(function (c) { return c.label; }).join('\n') + '</option>\n' +
+      '<option>' + choices.map(function (c) { return (ES.narrative.optionLine ? ES.narrative.optionLine(c) : c.label); }).join('\n') + '</option>\n' +
       '<sum>' + sum + '</sum>\n' +
       '<vars>' + JSON.stringify(varsPatch, null, 0) + '</vars>';
 
@@ -1014,7 +1014,7 @@ ES.tavern = (function () {
   function applyModeChrome() {
     const panel = U.$('#tavern-panel');
     if (panel) panel.classList.toggle('hidden', uiMode !== 'tavern');
-    const lbl = U.$('#ui-mode-label');
+    const lbl = null;   /* 单一界面：不再有模式切换标签 */
     if (lbl) lbl.textContent = uiMode === 'tavern' ? '叙事模式' : '酒馆模式';
     const screen = U.$('#screen-main');
     if (screen) screen.setAttribute('data-ui', uiMode);
@@ -1050,8 +1050,7 @@ ES.tavern = (function () {
       '<div class="tv-main">' +
         '<div class="tv-stream scroll-y" id="tavern-stream" aria-live="polite"></div>' +
         '<div class="tv-inputbar glass-panel">' +
-          '<div class="tv-opts" id="tavern-opts"></div>' +
-          '<div class="tv-input-row">' +
+            '<div class="tv-input-row">' +
             '<textarea class="input tv-input" id="tavern-input" rows="1" placeholder="自由行动 / 对话（Enter 发送，Shift+Enter 换行）" aria-label="酒馆输入"></textarea>' +
             '<button type="button" class="btn btn-primary" id="btn-tv-send">' + U.icon('send', 'icon-sm') + '发送</button>' +
             '<button type="button" class="btn btn-ghost" id="btn-tv-continue" data-tip="继续推演（不推进回合）">' + U.icon('play', 'icon-sm') + '继续</button>' +
@@ -1137,9 +1136,20 @@ ES.tavern = (function () {
     const thinkMode = db.settings.thinkingDisplay;
     const think = (thinkMode === 'hide' || !p.thinking) ? '' :
       '<details class="tv-think"' + (thinkMode === 'inline' ? ' open' : '') + '><summary>' + U.icon('cpu', 'icon-xs') + '思考 / 判定轨迹</summary><pre>' + U.esc(p.thinking) + '</pre></details>';
-    const opts = (p.options && p.options.length && !f.streaming) ?
-      '<div class="tv-options">' + p.options.map(function (o, i) {
-        return '<button type="button" class="tv-opt" data-tv-opt="' + i + '"><span class="tv-opt-no">' + (i + 1) + '</span>' + U.esc(o) + '</button>';
+    /* 楼层内选项：解析成 文本 / 风险 / 判定，与叙事层同一份数据 */
+    const parsed = (p.options && p.options.length && !f.streaming)
+      ? p.options.map(function (o) { return ES.narrative.parseOptionLine ? ES.narrative.parseOptionLine(o) : { label: o, risk: 'normal', check: null }; }).filter(Boolean)
+      : [];
+    const opts = parsed.length ?
+      '<div class="tv-options">' + parsed.map(function (c, i) {
+        return '<button type="button" class="tv-opt" data-tv-opt="' + i + '">' +
+          '<span class="tv-opt-no">' + (i + 1) + '</span>' +
+          '<span class="tv-opt-body"><span class="tv-opt-label">' + U.esc(c.label) + '</span>' +
+          (c.desc ? '<span class="tv-opt-desc">' + U.esc(c.desc) + '</span>' : '') +
+          '<span class="tv-opt-meta">' +
+            (c.check ? '<span class="tag" data-tone="cyan">' + U.esc(c.check.tag) + ' 成功线 ' + c.check.dc + '</span>' : '<span class="tag" data-tone="green">无判定</span>') +
+            (c.risk === 'high' ? '<span class="tag" data-tone="red">高风险</span>' : '') +
+          '</span></span></button>';
       }).join('') + '</div>' : '';
     let vars = '';
     if (db.settings.showVarsChips) {
@@ -1199,9 +1209,12 @@ ES.tavern = (function () {
     node.replaceWith(tmp.firstElementChild);
     if (db.settings.autoScroll) host.scrollTop = host.scrollHeight;
   }
+  /* 选项只在楼层内展示；底边栏不再重复渲染 */
   function renderOpts() {
     const host = U.$('#tavern-opts');
     if (!host) return;
+    host.innerHTML = '';
+    return;
     const choices = ES.narrative.currentChoices ? ES.narrative.currentChoices() : [];
     host.innerHTML = choices.length
       ? choices.map(function (c, i) {
@@ -1215,7 +1228,6 @@ ES.tavern = (function () {
   /* ══════════ 事件绑定 ══════════ */
   function bindPanel() {
     const stream = U.$('#tavern-stream');
-    const opts = U.$('#tavern-opts');
     const input = U.$('#tavern-input');
 
     stream.addEventListener('click', function (e) {
@@ -1237,10 +1249,8 @@ ES.tavern = (function () {
       else if (kind === 'del') deleteFloor(id);
       else if (kind === 'edit') openEdit(f);
     });
-    opts.addEventListener('click', function (e) {
-      const opt = e.target.closest('[data-tv-opt]');
-      if (opt) chooseOption(parseInt(opt.getAttribute('data-tv-opt'), 10));
-    });
+
+
     U.$('#btn-tv-send').addEventListener('click', function () { send(input.value); input.value = ''; });
     U.$('#btn-tv-continue').addEventListener('click', continueFloor);
     U.$('#btn-tv-regen').addEventListener('click', function () {

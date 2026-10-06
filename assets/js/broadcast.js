@@ -28,10 +28,23 @@ ES.broadcast = (function () {
     return U.pick(pool);
   }
 
+  /** 比赛推演是否开放：只有比赛日（赛程或剧情标记）才能进入 */
+  function canPlay() {
+    if (!S) return false;
+    return !!(ES.state.matchToday && ES.state.matchToday(S));
+  }
+  function gateHint() {
+    if (!S) return '尚未建档';
+    const nm = ES.state.nextMatch ? ES.state.nextMatch(S) : null;
+    return nm ? ('下一场比赛：' + nm.inDays + ' 天后 · ' + nm.text) : '当前没有已排定的比赛';
+  }
+
   function newGame(opts) {
     opts = opts || {};
     const pool = D.CLUBS.filter(function (o) { return !S.club || o.id !== S.club.id; });
-    const opp = opts.opponent || U.pick(pool);
+    /* 对手必须与赛程一致：优先取今日赛程对手，其次取传入值，最后才随机 */
+    const scheduled = ES.state.matchOpponent ? ES.state.matchOpponent(S) : null;
+    const opp = scheduled || opts.opponent || U.pick(pool);
     const map = opts.map || U.pick(MAPS);
 
     const myPos = ES.state.positionOf(S);
@@ -412,6 +425,7 @@ ES.broadcast = (function () {
 
   return {
     mount: mount, open: open, newGame: newGame, setState: function (s) { S = s; },
-    current: current, bindOrderClicks: bindOrderClicks, stop: stop, MAPS: MAPS
+    current: current, bindOrderClicks: bindOrderClicks, stop: stop, MAPS: MAPS,
+    canPlay: canPlay, gateHint: gateHint
   };
 })();

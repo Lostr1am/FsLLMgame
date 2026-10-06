@@ -589,6 +589,27 @@ ES.state = (function () {
     if (!out.length) out.push({ day: 14, text: meta.name + ' · 队内训练与排位', tone: 'dim', icon: 'target', kind: 'train' });
     return out;
   }
+  /** 今天是不是比赛日（赛程 + 剧情标记） */
+  function matchToday(s) {
+    const list = monthSchedule(s, s.time.month).filter(function (e) {
+      return e.day === s.time.day && (e.kind === 'match' || e.kind === 'intl');
+    });
+    if (list.length) return list[0];
+    if (s.flags && s.flags.matchToday) return { day: s.time.day, text: (s.flags.matchToday === true ? '今日比赛' : String(s.flags.matchToday)), kind: 'match', tone: 'gold', icon: 'sword' };
+    return null;
+  }
+  /** 今天的对手（与日程一致；国际赛事则跨赛区确定性抽取） */
+  function matchOpponent(s) {
+    const m = matchToday(s);
+    if (!m) return null;
+    if (m.opponent) return D.CLUBS.filter(function (c) { return c.id === m.opponent; })[0] || null;
+    const region = (s.club && s.club.region) || 'CN';
+    const pool = D.CLUBS.filter(function (c) { return c.region !== region && (!s.club || c.id !== s.club.id); });
+    if (!pool.length) return null;
+    const seed = s.time.year * 10000 + s.time.month * 100 + s.time.day;
+    return pool[seed % pool.length];
+  }
+
   /** 下一场比赛（供面板与提示词引用） */
   function nextMatch(s) {
     const now = s.time.day;
@@ -1237,6 +1258,7 @@ ES.state = (function () {
     promotePlayer: promotePlayer, lineupText: lineupText,
     applyStoryVars: applyStoryVars, normalizeStoryVars: normalizeStoryVars, attrKeyOf: attrKeyOf,
     monthSchedule: monthSchedule, nextMatch: nextMatch, SEASON_MONTHS: SEASON_MONTHS, hostOf: hostOf,
+    matchToday: matchToday, matchOpponent: matchOpponent,
     ovr: ovr, ovrDetail: ovrDetail, level: level, nextLevel: nextLevel, breakthroughRate: breakthroughRate,
     marketValue: marketValue, marketDetail: marketDetail, bondOf: bondOf, labelOf: labelOf,
     pa: pa, paLabel: paLabel, ovrGrade: ovrGrade, evaluation: evaluation, endingTitle: endingTitle,

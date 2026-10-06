@@ -383,6 +383,10 @@
 .tavern-panel{display:none}
 [data-ui="tavern"] .tavern-panel{display:grid;grid-template-columns:264px minmax(0,1fr);gap:14px;min-height:0;flex:1}
 [data-ui="tavern"] .narrative-head,[data-ui="tavern"] .narrative-stage{display:none}
+/* 单一界面：叙事模式的底部快捷条与自由行动条一并隐藏（改用楼层内选项 + 酒馆输入框） */
+[data-ui="tavern"] .bottombar{display:none}
+[data-ui="tavern"] .quick-choices{display:none}
+[data-ui="tavern"] .narrative-foot{display:none}
 [data-ui="tavern"] .narrative-col{padding:0}
 
 .tv-side{display:flex;flex-direction:column;gap:10px;min-width:0;max-height:100%}
@@ -514,3 +518,12 @@
 .story-think summary{cursor:pointer;color:var(--violet);list-style:none;display:flex;align-items:center;gap:6px}
 .story-think summary::-webkit-details-marker{display:none}
 .story-think[open] summary{margin-bottom:6px}
+
+/* 楼层内选项（结构化：文本 / 说明 / 判定） */
+.tv-opt-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tv-opt-label{color:var(--txt-1)}
+.tv-opt-desc{font-size:var(--fs-xs);color:var(--txt-3);line-height:1.5}
+.tv-opt-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+/* 比赛入口：非比赛日变灰 */
+.btn.is-off{opacity:.42;filter:grayscale(.5)}
+.btn.is-off:hover{border-color:var(--line-2);transform:none}

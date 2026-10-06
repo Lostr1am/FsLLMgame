@@ -619,6 +619,8 @@ ES.narrative = (function () {
       if (sch.length) out.push('【本月赛程】' + sch.map(function (e) { return e.day + ' 日 ' + e.text; }).join('；'));
       const nm = ES.state.nextMatch ? ES.state.nextMatch(s) : null;
       if (nm) out.push('【下一场比赛】' + nm.text + '（' + nm.inDays + ' 天后，' + nm.month + ' 月 ' + nm.day + ' 日）；剧情与训练安排必须与赛程吻合。');
+      const today = ES.state.matchToday ? ES.state.matchToday(s) : null;
+      if (today) out.push('【今日比赛】' + today.text + ' —— 今天是比赛日：正文必须写到这场比赛（赛前准备 / 上场 / 赛果），玩家可据此进入比赛推演。');
     }
     const rels = s.relations.slice().sort(function (a, b) { return b.affection - a.affection; }).slice(0, 8);
     if (rels.length) out.push('【关键人物】' + rels.map(function (r) { return r.name + '（' + r.role + '，好感 ' + Math.round(r.affection) + '）'; }).join('；'));
@@ -645,6 +647,7 @@ ES.narrative = (function () {
       '硬性规则：',
       '1. 日期只能前进，绝不回退；只有当剧情真的经过了时间（训练数日、休赛期、出差、等待）才写 time.advanceDays，一两天的小事不要推进日期。',
       '2. 数值变化要克制：属性 ±1~3，关系 ±2~8，金钱按现实量级（电竞选手月薪数万到数十万），状态/健康 ±3~15。',
+      '2.1 赛程纪律：比赛日（见【今日比赛】）的正文必须围绕这场比赛；比赛结果由系统的比赛推演产生，你只负责赛前、赛后与场间叙事，不要自己编造比分与冠军。',
       '3. 尊重现实 VCT 设定：俱乐部、赛制（13 分制、加时）、地图与特工名称都要真实；现实选手只用其比赛 ID 与公开赛场形象，不涉及私生活；虚构配角可用中文名。',
       '4. 玩家是 17—19 岁的年轻选手，起点低、资源少；不要无理由地给他大赛冠军或顶级合同。',
       '5. 判定的成败由系统给出（见【判定结果】）；有判定时，剧情必须体现该结果，不要自行改变成败。',
@@ -873,6 +876,15 @@ ES.narrative = (function () {
     ];
     if (low) list.push({ label: '私下找 ' + low.name + ' 聊一次，把话说开', desc: '关系修复：' + low.name + ' 目前好感最低（' + Math.round(low.affection) + '）', risk: 'normal', check: { attr: 'comms', dc: 12, tag: '沟通' } });
     return list.slice(0, 3);
+  }
+
+  /** 把选项对象序列化回一行（供楼层回写 <option> 时保留元数据） */
+  function optionLine(c) {
+    const parts = [String(c.label || '').trim()];
+    parts.push('risk:' + (c.risk || 'normal'));
+    if (c.check) parts.push('check:' + (c.check.attr || c.check.tag) + ':' + c.check.dc + ':' + (c.check.tag || ''));
+    if (c.desc) parts.push(String(c.desc).replace(/\|/g, '/'));
+    return parts.join(' | ');
   }
 
   /** 用模型给出的选项替换当前选项（酒馆层与叙事层共用） */
@@ -1541,7 +1553,7 @@ ES.narrative = (function () {
     setGen: setGen, get current() { return current; }, finishCareer: finishCareer,
     currentChoices: function () { return current ? (current.choices || []) : []; },
     aiOn: aiOn, aiTurn: aiTurn, engineName: engineName, refreshEngineTag: refreshEngineTag,
-    resetAiSession: resetAiSession, setChoices: setChoices, parseOptionLine: parseOptionLine,
+    resetAiSession: resetAiSession, setChoices: setChoices, parseOptionLine: parseOptionLine, optionLine: optionLine,
     buildStateDigest: buildStateDigest, buildWorldContext: buildWorldContext,
     promotionReady: promotionReady, promotionScene: promotionScene,
     busyNow: function () { return !!busy; },
