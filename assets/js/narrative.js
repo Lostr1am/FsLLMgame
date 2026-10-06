@@ -730,6 +730,7 @@ ES.narrative = (function () {
     const messages = buildStoryMessages(S, actionText, opts);
     const parsed = { thinking: '', maintext: '', options: [], sum: '', varsRaw: '', varsCommands: { merge: {} }, unknown: {} };
     const parser = new ES.tavern.StreamTagParser(ES.tavern.DEFAULT_TAGS, ES.tavern.DEFAULT_OPAQUE);
+    let reasoningBuf = '';
     const live = appendLiveProse();
     const started = Date.now();
     return ES.api.chat({
@@ -739,6 +740,10 @@ ES.narrative = (function () {
         ES.tavern.aggregate(parser.feed(chunk), parsed);
         live.set(parsed.maintext);
         setGen('AI 生成剧情中 · ' + String(parsed.maintext || '').length + ' 字', true);
+      },
+      onReasoning: function (piece) {
+        reasoningBuf += piece;
+        if (!parsed.maintext) setGen('模型思考中 · ' + reasoningBuf.length + ' 字', true);
       }
     }).then(function (res) {
       if (res && res.local) {
@@ -750,16 +755,27 @@ ES.narrative = (function () {
       }
       /* 降级：模型没写标签时，把整段原文当正文 */
       let rawText = String(res && (res.text || res.raw) || '');
+      const reasonText = String((res && res.reasoning) || reasoningBuf || '');
+      /* 协议噪声（SSE / chat.completion JSON）绝不进正文 */
+      const noise = /chat\.completion\.chunk|system_fingerprint|\"delta\"\s*:/.test(rawText) || /^\s*data:\s*\{/m.test(rawText);
+      if (noise) rawText = '';
+      /* 有些端点把最终答案也放在 reasoning_content 里，那就从里面捞标签 */
+      if (!parsed.maintext && reasonText && /<maintext>|<option>/i.test(reasonText)) {
+        ES.tavern.aggregate(parser.feed(reasonText), parsed);
+      }
       if (!parsed.maintext && rawText) {
         parsed.maintext = rawText.replace(/<\/?(?:thinking|think|vars|sum|option|maintext)>/gi, '').trim();
       }
       if (!parsed.maintext) {
-        parsed.maintext = '（模型这次没有返回可用文本' + (rawText ? '，原始响应见下方' : '，可能是超时或鉴权失败') + '。可以点「继续」重试，或换一个模型。';
+        parsed.maintext = reasonText
+          ? '（模型只返回了思维链，没有给出正文。若持续如此，说明该端点把答案也放在 reasoning_content，或需要关闭思考模式。已按思维链中的内容尽力恢复，可点「继续」重试。）'
+          : '（模型这次没有返回可用文本' + (rawText ? '，原始响应见下方' : '，可能是超时或鉴权失败') + '。可以点「继续」重试，或换一个模型。）';
       }
       live.done(parsed.maintext);
       const blocks = [];
-      if (!parsed.sum && !(parsed.options || []).length && rawText) blocks.push({ t: 'think', text: '<b>模型原始响应</b>（未按标签格式输出，前 1200 字）<br>' + esc2html(rawText.slice(0, 1200)) });
-      if (parsed.thinking) blocks.push({ t: 'think', text: esc2html(parsed.thinking) });
+      const thinkText = parsed.thinking || reasonText;
+      if (thinkText) blocks.push({ t: 'think', text: esc2html(thinkText.slice(0, 4000)) });
+      else if (rawText) blocks.push({ t: 'think', text: '<b>模型原始响应</b>（未按标签格式输出，前 1200 字）<br>' + esc2html(rawText.slice(0, 1200)) });
       if (parsed.sum) blocks.push({ t: 'sum', text: esc2html(parsed.sum).replace(/\n/g, '<br>') });
       const applied = ES.state.applyStoryVars(S, parsed.varsCommands.merge);
       if (applied && applied.notes.length) {

@@ -18,7 +18,7 @@ ES.api = (function () {
     primary: {
       baseUrl: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini',
       temperature: 0.95, maxTokens: 1200, timeout: 90000, stream: true, headers: '',
-      topP: 0.95, presencePenalty: 0.3, frequencyPenalty: 0
+      topP: 0.95, presencePenalty: 0.3, frequencyPenalty: 0, noThinking: false
     },
     secondary: {
       enabled: false, baseUrl: 'https://api.deepseek.com/v1', apiKey: '', model: 'deepseek-chat',
@@ -76,12 +76,18 @@ ES.api = (function () {
     b.top_p = t.topP === undefined ? 0.95 : Number(t.topP);
     b.presence_penalty = t.presencePenalty === undefined ? 0.3 : Number(t.presencePenalty);
     b.frequency_penalty = Number(t.frequencyPenalty || 0);
+    /* 推理模型（DeepSeek R1 / v4-flash 等）可用该开关要求只输出正文，减少延迟与英文思维链 */
+    if (t.noThinking) {
+      b.enable_thinking = false;
+      b.reasoning_effort = 'none';
+      b.chat_template_kwargs = { enable_thinking: false };
+    }
     return b;
   }
 
   /* ── SSE 解析（OpenAI 兼容：data: {...}\n\n，结束标记 [DONE]） ── */
   function parseSseChunk(buffer) {
-    const out = { deltas: [], done: false, rest: '', errors: [] };
+    const out = { deltas: [], reasoning: [], done: false, rest: '', errors: [] };
     const parts = String(buffer).split('\n');
     out.rest = parts.pop();
     parts.forEach(function (line) {
@@ -96,10 +102,15 @@ ES.api = (function () {
         const ch = (json.choices || [])[0] || {};
         const d = ch.delta || ch.message || {};
         let piece = '';
+        let think = '';
         if (typeof d.content === 'string') piece = d.content;
         else if (typeof ch.text === 'string') piece = ch.text;
         else if (typeof ch.message === 'object' && ch.message && typeof ch.message.content === 'string') piece = ch.message.content;
-        else if (typeof json.content === 'string') piece = json.content;
+        else if (typeof json.content === 'string' && json.reasoning_content === undefined) piece = json.content;
+        /* DeepSeek 等推理模型：思维链在 reasoning_content，正文仍在 content */
+        if (typeof d.reasoning_content === 'string') think = d.reasoning_content;
+        else if (typeof json.reasoning_content === 'string') think = json.reasoning_content;
+        if (think) out.reasoning.push(think);
         if (piece) out.deltas.push(piece);
       } catch (e) { /* 忽略半包 */ }
     });
@@ -117,9 +128,20 @@ ES.api = (function () {
   }
 
   /** 把「非标准流式」的整段响应体尽量榨出文本：SSE 行 / 裸 JSON / 原样文本 */
+  /** 判断一段文本是不是协议噪声（SSE 行 / chat.completion JSON） */
+  function looksProtocol(s) {
+    const x = String(s || '');
+    if (!x.trim()) return false;
+    if (/chat\.completion\.chunk|\"object\"\s*:\s*\"chat\.completion|system_fingerprint/.test(x)) return true;
+    if (/^\s*data:\s*\{/m.test(x) && x.indexOf('\n') > 0 && x.length > 200) return true;
+    return false;
+  }
   function salvageText(raw) {
     const s = String(raw || '');
     if (!s.trim()) return '';
+    /* 协议原文不是剧情文本，宁可返回空 */
+    const hasSse = /^\s*data:\s*/m.test(s);
+    const hasJson = /^\s*\{/.test(s.trim());
     const parts = [];
     s.split(/\r?\n/).forEach(function (line) {
       const x = line.trim();
@@ -132,7 +154,9 @@ ES.api = (function () {
       if (x.indexOf('data:') !== 0) parts.push(x);
     });
     if (parts.length) return parts.join('');
-    try { const p = extractText(JSON.parse(s)); if (p) return p; } catch (e) { /* 原样返回 */ }
+    try { const p = extractText(JSON.parse(s)); if (p) return p; } catch (e) { /* 非完整 JSON */ }
+    /* 纯文本才原样返回（协议残片一律丢弃，避免把 JSON 当剧情渲染） */
+    if (hasSse || hasJson || looksProtocol(s)) return '';
     return s;
   }
 
@@ -153,7 +177,10 @@ ES.api = (function () {
       }
       return res.json();
     }).then(function (json) {
-      return { text: extractText(json), target: target, ms: Date.now() - started, usage: json.usage || null, streamed: false ,
+      return { text: extractText(json), reasoning: (function () {
+        const ch = (json.choices || [])[0] || {};
+        return (ch.message && ch.message.reasoning_content) || json.reasoning_content || '';
+      })(), target: target, ms: Date.now() - started, usage: json.usage || null, streamed: false ,
       top_p: cfg.topP === undefined ? 0.95 : cfg.topP,
       presence_penalty: cfg.presencePenalty === undefined ? 0.3 : cfg.presencePenalty,
       frequency_penalty: cfg.frequencyPenalty || 0};
@@ -166,9 +193,11 @@ ES.api = (function () {
     const timer = setTimeout(function () { ctrl.abort(); }, t.timeout || 90000);
     const started = Date.now();
     let full = '';
+    let reasoning = '';
     let rawAll = '';
     let buffer = '';
     const onDelta = (opts && opts.onDelta) || function () {};
+    const onReasoning = (opts && opts.onReasoning) || function () {};
     return fetch(urlFor(t), {
       method: 'POST', headers: headersFor(t), signal: ctrl.signal,
       body: JSON.stringify(bodyFor(t, messages, true))
@@ -183,6 +212,7 @@ ES.api = (function () {
         return reader.read().then(function (r) {
           if (r.done) {
             const tail = parseSseChunk(buffer + '\n');
+            tail.reasoning.forEach(function (d) { reasoning += d; onReasoning(d); });
             tail.deltas.forEach(function (d) { full += d; onDelta(d); });
             if (tail.errors.length) throw new Error(tail.errors[0]);
             clearTimeout(timer);
@@ -190,6 +220,7 @@ ES.api = (function () {
             /* 有些端点忽略 stream:true，直接返回整段 JSON 或纯文本 */
             const salvaged = salvageText(rawAll);
             if (salvaged) { onDelta(salvaged); return salvaged; }
+            /* 只有思维链没有正文：交给上层处置（不当作剧情） */
             return full;
           }
           const _dec = dec.decode(r.value, { stream: true });
@@ -197,6 +228,7 @@ ES.api = (function () {
           buffer += _dec;
           const ev = parseSseChunk(buffer);
           buffer = ev.rest;
+          ev.reasoning.forEach(function (d) { reasoning += d; onReasoning(d); });
           ev.deltas.forEach(function (d) { full += d; onDelta(d); });
           if (ev.errors.length) throw new Error(ev.errors[0]);
           return pump();
@@ -204,7 +236,7 @@ ES.api = (function () {
       }
       return pump();
     }).then(function (text) {
-      return { text: text || full, target: target, ms: Date.now() - started, streamed: true };
+      return { text: text || full, reasoning: reasoning, target: target, ms: Date.now() - started, streamed: true };
     }).catch(function (e) { clearTimeout(timer); throw e; });
   }
 
@@ -302,7 +334,7 @@ ES.api = (function () {
     KEY: KEY, DEFAULTS: DEFAULTS,
     config: config, setConfig: setConfig, save: save, reset: reset, clearKeys: clearKeys,
     isEnabled: isEnabled, mode: mode, routeFor: routeFor, chat: chat, test: test,
-    parseSseChunk: parseSseChunk, summaryPrompt: summaryPrompt,
+    parseSseChunk: parseSseChunk, looksProtocol: looksProtocol, salvageText: salvageText, summaryPrompt: summaryPrompt,
     getAudit: getAudit, getLastError: getLastError, friendlyError: friendlyError,
     urlFor: urlFor, bodyFor: bodyFor, headersFor: headersFor
   };

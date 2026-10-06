@@ -1596,6 +1596,8 @@ ES.tavern = (function () {
           field(prefix + '-temp', '温度', t.temperature) +
           field(prefix + '-max', 'max_tokens', t.maxTokens) +
           field(prefix + '-timeout', '超时(ms)', t.timeout) +
+          '<div class="field"><span class="field-label">思考模式</span>' +
+            '<label class="chip"><input type="checkbox" id="' + prefix + '-nothink"' + (t.noThinking ? ' checked' : '') + '> 关闭思考（仅输出正文，推理模型建议开）</label></div>' +
           '<div class="field"><span class="field-label">流式 SSE</span>' +
             '<label class="chip"><input type="checkbox" id="' + prefix + '-stream"' + (t.stream ? ' checked' : '') + '> 启用流式输出</label></div>' +
           '<div class="field"><span class="field-label">自定义请求头（JSON）</span>' +
@@ -1670,14 +1672,16 @@ ES.tavern = (function () {
           baseUrl: U.$('#api-p-base').value.trim(), model: U.$('#api-p-model').value.trim(),
           apiKey: U.$('#api-p-key').value.trim(), temperature: parseFloat(U.$('#api-p-temp').value) || 0.85,
           maxTokens: parseInt(U.$('#api-p-max').value, 10) || 1200, timeout: parseInt(U.$('#api-p-timeout').value, 10) || 90000,
-          stream: U.$('#api-p-stream').checked, headers: U.$('#api-p-headers').value.trim()
+          stream: U.$('#api-p-stream').checked, headers: U.$('#api-p-headers').value.trim(),
+          noThinking: U.$('#api-p-nothink') ? U.$('#api-p-nothink').checked : false
         },
         secondary: {
           enabled: U.$('#api-s-enabled').checked,
           baseUrl: U.$('#api-s-base').value.trim(), model: U.$('#api-s-model').value.trim(),
           apiKey: U.$('#api-s-key').value.trim(), temperature: parseFloat(U.$('#api-s-temp').value) || 0.3,
           maxTokens: parseInt(U.$('#api-s-max').value, 10) || 400, timeout: parseInt(U.$('#api-s-timeout').value, 10) || 60000,
-          stream: U.$('#api-s-stream').checked, headers: U.$('#api-s-headers').value.trim()
+          stream: U.$('#api-s-stream').checked, headers: U.$('#api-s-headers').value.trim(),
+          noThinking: U.$('#api-s-nothink') ? U.$('#api-s-nothink').checked : false
         }
       });
     }

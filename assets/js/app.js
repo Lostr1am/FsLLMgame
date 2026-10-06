@@ -42,6 +42,20 @@ function installMockStory(mode) {
   const enc = function (s) { return new TextEncoder().encode(s); };
   window.fetch = function (url, opt) {
     const body = opt && opt.body ? JSON.parse(opt.body) : {};
+    if (mode === 'reason' || mode === 'reasononly') {
+      /* 复现 deepseek 推理端点：content 恒为 null，文本走 reasoning_content */
+      const think = 'We need to write the scene in Chinese. Player is a substitute at the club. Keep grounded, add dialogue, end on another character action.';
+      const chunks = [];
+      if (mode === 'reason') {
+        for (let i = 0; i < think.length; i += 8) chunks.push('data: ' + JSON.stringify({ choices: [{ delta: { content: null, reasoning_content: think.slice(i, i + 8) } }] }) + '\n\n');
+        for (let i = 0; i < canned.length; i += 26) chunks.push('data: ' + JSON.stringify({ choices: [{ delta: { content: canned.slice(i, i + 26) } }] }) + '\n\n');
+      } else {
+        for (let i = 0; i < canned.length; i += 20) chunks.push('data: ' + JSON.stringify({ choices: [{ delta: { content: null, reasoning_content: canned.slice(i, i + 20) } }] }) + '\n\n');
+      }
+      chunks.push('data: [DONE]\n\n');
+      let k = 0;
+      return Promise.resolve({ ok: true, status: 200, body: { getReader: function () { return { read: function () { return Promise.resolve(k < chunks.length ? { done: false, value: enc(chunks[k++]) } : { done: true }); } }; } } });
+    }
     if (body.stream) {
       const chunks = [];
       for (let i = 0; i < canned.length; i += 26) chunks.push('data: ' + JSON.stringify({ choices: [{ delta: { content: canned.slice(i, i + 26) } }] }) + '\n\n');
@@ -645,6 +659,22 @@ ES.app = (function () {
             case 'broadcast': openBroadcast(); break;
             case 'tavern': setUiMode('tavern'); break;
             case 'api': setUiMode('tavern'); ES.tavern.openApi(); break;
+            case 'aimock5': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'deepseek-v4-flash(mock)' }) });
+              ES.api.save();
+              installMockStory('reason');
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              break;
+            }
+            case 'aimock6': {
+              ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'reason-only(mock)' }) });
+              ES.api.save();
+              installMockStory('reasononly');
+              if (ES.narrative.refreshEngineTag) ES.narrative.refreshEngineTag();
+              setTimeout(function () { ES.narrative.aiTurn(null, { opening: true }); }, 500);
+              break;
+            }
             case 'aimock3': {
               ES.api.setConfig({ mode: 'single', fallbackLocal: false, primary: Object.assign(ES.api.config().primary, { baseUrl: 'https://mock.local/v1', apiKey: 'mock', model: 'mock-plain-model' }) });
               ES.api.save();

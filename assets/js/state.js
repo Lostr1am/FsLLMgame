@@ -715,7 +715,10 @@ ES.state = (function () {
     (deltas || []).forEach(function (d) {
       if (!d.delta) return;
       if (d.kind === 'money') notes.push(d.label + ' ' + (d.delta > 0 ? '+' : '') + Math.round(d.delta));
-      else notes.push(d.label + ' ' + d.from + ' → ' + d.to);
+      else {
+        const fmt = function (v) { const n = Number(v); return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10); };
+        notes.push(d.label + ' ' + fmt(d.from) + ' → ' + fmt(d.to));
+      }
     });
     /* 关系（按 NPC 姓名） */
     Object.keys(v.relations).forEach(function (nm) {
