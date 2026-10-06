@@ -1,0 +1,94 @@
+/* ═══════════════════════════════════════════════════════════════
+   动效层：关键帧 / 微交互 / 无障碍降级
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes gridDrift{from{background-position:0 0,0 0,0 0,0 0}to{background-position:120px 120px,120px 120px,24px 24px,24px 24px}}
+@keyframes floatA{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,3vh,0) scale(1.12)}}
+@keyframes floatB{0%,100%{transform:translate3d(0,0,0) scale(1.05)}50%{transform:translate3d(-5vw,-4vh,0) scale(.92)}}
+@keyframes dotPulse{0%{box-shadow:0 0 0 0 currentColor;opacity:1}70%{box-shadow:0 0 0 7px transparent;opacity:.85}100%{box-shadow:0 0 0 0 transparent;opacity:1}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rippleOut{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+@keyframes meterSheen{0%{transform:translateX(-100%)}55%{transform:translateX(100%)}100%{transform:translateX(100%)}}
+@keyframes deltaFloat{0%{opacity:0;transform:translateY(4px) scale(.9)}18%{opacity:1;transform:translateY(-2px) scale(1)}100%{opacity:0;transform:translateY(-22px) scale(1)}}
+@keyframes screenIn{from{opacity:0;transform:scale(.995) translateY(6px)}to{opacity:1;transform:none}}
+@keyframes screenOut{to{opacity:0;transform:scale(1.01) translateY(-8px);filter:blur(4px)}}
+@keyframes panelFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes stepIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes modalOut{to{opacity:0;transform:translateY(10px) scale(.99)}}
+@keyframes backdropIn{from{opacity:0}to{opacity:1}}
+@keyframes backdropOut{to{opacity:0}}
+@keyframes toastIn{from{opacity:0;transform:translateX(28px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px) scale(.97);filter:blur(3px)}}
+@keyframes toastBar{from{width:100%}to{width:0}}
+@keyframes bannerIn{from{opacity:0;transform:translateY(-10px);clip-path:polygon(0 0,0 0,0 100%,0 100%)}to{opacity:1;transform:none;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}}
+@keyframes sheenSweep{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
+@keyframes tipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes genBounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-4px);opacity:1}}
+@keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes danmuIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes bootLine{to{opacity:1;transform:none}}
+@keyframes markPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 34%,transparent)}50%{box-shadow:0 0 0 12px transparent}}
+@keyframes enterPulse{0%,100%{box-shadow:0 10px 26px -14px var(--accent)}50%{box-shadow:0 14px 44px -10px var(--accent)}}
+@keyframes diceShake{0%,100%{transform:rotate(-4deg) translateY(0)}25%{transform:rotate(5deg) translateY(-6px)}50%{transform:rotate(-3deg) translateY(2px)}75%{transform:rotate(6deg) translateY(-4px)}}
+@keyframes verdictIn{0%{opacity:0;transform:scale(1.5);filter:blur(8px)}60%{opacity:1;filter:blur(0)}100%{transform:scale(1)}}
+@keyframes rarityIn{0%{opacity:0;transform:scale(.86) translateY(14px)}60%{transform:scale(1.03) translateY(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes haloPulse{0%,100%{opacity:.45;transform:scale(.94)}50%{opacity:.85;transform:scale(1.06)}}
+@keyframes particleFly{
+  0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}
+  100%{opacity:0;transform:translate(var(--px,0),var(--py,-80px)) scale(.2) rotate(320deg)}
+}
+@keyframes radarGrow{from{opacity:0;transform:scale(.4);transform-origin:center}to{opacity:1;transform:scale(1)}}
+@keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes achieveIn{from{opacity:0;transform:translateX(-24px) rotate(-2deg)}to{opacity:1;transform:none}}
+@keyframes floatSlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes borderFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+@keyframes pulseRing{0%{opacity:.6;transform:scale(.9)}70%{opacity:0;transform:scale(1.5)}100%{opacity:0}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes glowBreath{0%,100%{box-shadow:0 0 0 1px color-mix(in oklab,var(--accent) 30%,transparent),0 0 22px -10px var(--accent)}50%{box-shadow:0 0 0 1px color-mix(in oklab,var(--accent) 55%,transparent),0 0 40px -8px var(--accent)}}
+
+/* 微交互工具类 */
+.u-shake{animation:shakeX .42s var(--ease-in-out)}
+.u-breath{animation:glowBreath 3.4s var(--ease-in-out) infinite}
+.u-float{animation:floatSlow 5s var(--ease-in-out) infinite}
+.u-pop{animation:countUp var(--dur-3) var(--ease-out)}
+
+/* 悬停 3D 倾斜 */
+.tilt{transform-style:preserve-3d;will-change:transform}
+.tilt>*{transform:translateZ(18px)}
+
+/* 强调边框流光 */
+.flow-border{position:relative}
+.flow-border::before{
+  content:"";position:absolute;inset:-1px;z-index:-1;padding:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in oklab,var(--accent) 70%,transparent),transparent);
+  background-size:200% 100%;animation:borderFlow 3.4s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+
+/* 无障碍：减少动效 */
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after{
+  animation-duration:.001ms !important;
+  animation-iteration-count:1 !important;
+  transition-duration:.06s !important;
+}
+[data-motion="reduced"] .bg-grid,
+[data-motion="reduced"] .bg-glow,
+[data-motion="reduced"] .cursor-aura{display:none}
+[data-motion="reduced"] .meter-fill::after,
+[data-motion="reduced"] .banner::after{display:none}
+[data-motion="reduced"] .tilt>*{transform:none}
+@media (prefers-reduced-motion:reduce){
+  html:not([data-motion="full"]) *,
+  html:not([data-motion="full"]) *::before,
+  html:not([data-motion="full"]) *::after{animation-duration:.001ms !important;transition-duration:.06s !important}
+}
+@media (prefers-contrast:more){
+  :root{--line:rgba(180,220,240,.32);--txt-2:#c9d9e5;--txt-3:#9fb2c0}
+}

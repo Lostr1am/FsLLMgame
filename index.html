@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="harbor" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>巅峰回廊 · 电竞职业生涯模拟器</title>
+<meta name="description" content="巅峰回廊 —— 以 LLM 叙事驱动的电竞职业选手人生模拟器前端原型。港服终端美学，角色建档、赛季经营、比赛直播、关系与舆论系统。">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#05070c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/screens.css">
+<link rel="stylesheet" href="assets/css/animations.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070b12'/%3E%3Cpath d='M6 22 16 6l10 16z' fill='none' stroke='%232fe3d4' stroke-width='2'/%3E%3Cpath d='M11 22h10' stroke='%23f7b955' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body>
+<!-- ══════════════════════ 图标库（内联 SVG symbol，无 emoji） ══════════════════════ -->
+<svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="4.2"/><circle cx="8.6" cy="8.6" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.7"/><path d="M4.9 20.2c1.1-3.6 3.9-5.5 7.1-5.5s6 1.9 7.1 5.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.6" r="3.1"/><path d="M3.4 19.8c.8-3 2.9-4.6 5.6-4.6s4.8 1.6 5.6 4.6"/><path d="M16 5.9a3 3 0 0 1 0 5.6M17.6 15.6c1.7.5 2.9 1.9 3.4 4"/></symbol>
+    <symbol id="i-id" viewBox="0 0 24 24"><rect x="3.2" y="5" width="17.6" height="14" rx="2.4"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16.4c.6-1.7 1.8-2.6 3.2-2.6s2.6.9 3.2 2.6M14.6 10h4M14.6 13.2h4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2 19 5.8v5.5c0 4.4-2.9 7.9-7 9.3-4.1-1.4-7-4.9-7-9.3V5.8z"/><path d="M9.2 11.8 11.3 14l3.7-4"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M9.1 7.9 12 12l2.9-4.1M12 12v4.6M9.7 13.3h4.6M9.7 15.4h4.6"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.6 2.6 5.4 13.6h5.1l-1.3 7.8 8.4-11h-5.1z"/></symbol>
+    <symbol id="i-mind" viewBox="0 0 24 24"><path d="M12 5.4v13.2"/><path d="M12 7.6c-.6-1.5-2-2.3-3.5-2.1A3.1 3.1 0 0 0 6 8.1a2.7 2.7 0 0 0-1.4 4.6 2.9 2.9 0 0 0 1.1 5A3.1 3.1 0 0 0 9 20.5"/><path d="M12 7.6c.6-1.5 2-2.3 3.5-2.1A3.1 3.1 0 0 1 18 8.1a2.7 2.7 0 0 1 1.4 4.6 2.9 2.9 0 0 1-1.1 5A3.1 3.1 0 0 1 15 20.5"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8.5 11.1V5.8a1.6 1.6 0 0 1 3.2 0v5.3"/><path d="M11.7 10.7V4.6a1.6 1.6 0 0 1 3.2 0v6.1"/><path d="M14.9 10.9V6.3a1.6 1.6 0 0 1 3.2 0v7.5c0 3.9-2.6 6.5-6.3 6.5-2.4 0-4-.8-5.2-2.5l-3.1-4.5a1.7 1.7 0 0 1 2.6-2l1.5 1.6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.1V12l3.4 2.1"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 20.8s6.3-5.6 6.3-10.1a6.3 6.3 0 1 0-12.6 0C5.7 15.2 12 20.8 12 20.8z"/><circle cx="12" cy="10.4" r="2.4"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="2.2"/><path d="M3.6 10h16.8M8.2 3.4v3.4M15.8 3.4v3.4"/><path d="M7.6 13.6h2M11 13.6h2M14.4 13.6h2M7.6 16.8h2M11 16.8h2"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4.4h8v4.2a4 4 0 0 1-8 0z"/><path d="M8 5.6H5.4v1.8A3.3 3.3 0 0 0 8 10.6M16 5.6h2.6v1.8a3.3 3.3 0 0 1-2.6 3.2"/><path d="M12 12.6v3.6M9 20.4h6M10 20.4c0-2.4 1-3.9 2-3.9s2 1.5 2 3.9"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20.2h16"/><path d="M6.8 20.2v-6.4M11.6 20.2V7.6M16.4 20.2v-9.2M20.2 20.2V4.4"/></symbol>
+    <symbol id="i-radar" viewBox="0 0 24 24"><path d="M12 3.4 20 9l-3 9.6H7L4 9z"/><path d="M12 3.4V12M20 9l-8 3M7 18.6 12 12M4 9l8 3"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-contract" viewBox="0 0 24 24"><path d="M6.4 3.6h7.2l4.4 4.4v12.4H6.4z"/><path d="M13.6 3.6v4.4h4.4"/><path d="M9.2 12.4h5.6M9.2 15.6h5.6M9.2 18h3.2"/></symbol>
+    <symbol id="i-tasks" viewBox="0 0 24 24"><rect x="4.4" y="3.8" width="15.2" height="16.4" rx="2.2"/><path d="M8 9.2l1.7 1.7 3.1-3.3M8 15.4l1.7 1.7 3.1-3.3M14.6 10.6h2.2M14.6 16.8h2.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><circle cx="8.2" cy="8.4" r="2.9"/><circle cx="15.8" cy="8.4" r="2.9"/><path d="M3.2 19.6c.8-2.9 2.7-4.4 5-4.4 1.4 0 2.6.5 3.5 1.5M20.8 19.6c-.8-2.9-2.7-4.4-5-4.4-1.4 0-2.6.5-3.5 1.5"/><path d="M10.8 15.6h2.4"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.2s-7.6-4.6-7.6-9.6a4.3 4.3 0 0 1 7.6-2.7 4.3 4.3 0 0 1 7.6 2.7c0 5-7.6 9.6-7.6 9.6z"/><path d="M8.4 12.1h2l1.1-1.9 1.4 3.2 1-1.3h1.8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M3.7 12h16.6"/><path d="M12 3.7c2.4 2.4 3.6 5.2 3.6 8.3s-1.2 5.9-3.6 8.3c-2.4-2.4-3.6-5.2-3.6-8.3S9.6 6.1 12 3.7z"/></symbol>
+    <symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="14.6" r="5.2"/><path d="M8.4 10.1 6 3.6h4.2M15.6 10.1 18 3.6h-4.2"/><path d="M12 12.3l.9 1.9 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4.6 4.6h11l3.8 3.8v11H4.6z"/><path d="M8.4 4.6v5.2h6.2V4.6M8.4 19.4v-5.2h7.2v5.2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.6 6.4h5.2l1.8 2.2h9.8v9.6a1.8 1.8 0 0 1-1.8 1.8H5.4a1.8 1.8 0 0 1-1.8-1.8z"/><path d="M3.6 8.6h16.8"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 3.2v2.4M12 18.4v2.4M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M3.2 12h2.4M18.4 12h2.4M4.7 19.3l1.7-1.7M17.6 6.4l1.7-1.7"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.9 21 19.9H3z"/><path d="M12 9.4v4.4M12 16.8v.3"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 11v5.4M12 7.9v.3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.8 12.6 9.6 17.4 19.2 6.8"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5.4 5.4 18.6 18.6M18.6 5.4 5.4 18.6"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.2 5.4 15.8 12l-6.6 6.6"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.8 5.4 8.2 12l6.6 6.6"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M5.4 9.2 12 15.8l6.6-6.6"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M4.4 12h15.2M13.6 6l6 6-6 6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.4 4.8 19.4 12l-12 7.2z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.6 5v14M15.4 5v14"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.6l2.7 5.6 6.1.8-4.4 4.3 1.1 6.1L12 17.5l-5.5 2.9 1.1-6.1-4.4-4.3 6.1-.8z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21c3.3 0 5.6-2.2 5.6-5.3 0-4.4-4.4-5.4-3.6-12.7-3 1.1-5.3 4.3-5.3 6.6 0 1.4-1.1 1.9-1.9 1.1-.5 1-.8 2-.8 3.2C6 18.6 8.7 21 12 21z"/></symbol>
+    <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4.6 15.2v-3.1a7.4 7.4 0 0 1 14.8 0v3.1"/><path d="M4.6 14.2h2.1a1 1 0 0 1 1 1v3.4a1 1 0 0 1-1 1H5.8a1.2 1.2 0 0 1-1.2-1.2zM19.4 14.2h-2.1a1 1 0 0 0-1 1v3.4a1 1 0 0 0 1 1h.9a1.2 1.2 0 0 0 1.2-1.2z"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9.2" y="3.2" width="5.6" height="10" rx="2.8"/><path d="M5.8 11.4a6.2 6.2 0 0 0 12.4 0M12 17.6v3.2M9 20.8h6"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3.2" y="4.4" width="17.6" height="12" rx="2"/><path d="M9 20.4h6M12 16.4v4"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.8" y="6.4" width="18.4" height="11.2" rx="2.2"/><path d="M6.4 10h1.2M10 10h1.2M13.6 10h1.2M17.2 10h.4M6.4 13.4h1.2M10 13.4h1.2M13.6 13.4h1.2M17.2 13.4h.4M8.8 16.2h6.4"/></symbol>
+    <symbol id="i-rank" viewBox="0 0 24 24"><path d="M6.4 13.4 12 7.8l5.6 5.6M6.4 18.4 12 12.8l5.6 5.6"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3.2" y="4.6" width="17.6" height="14.8" rx="2.2"/><path d="M7.4 10l2.6 2.4-2.6 2.4M12.6 15h4"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.4l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.4 16.2l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20.4 3.6v4.6h-4.6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.6 7h14.8M9.4 7V4.6h5.2V7M6.6 7l.9 12.4h9l.9-12.4M10.4 10.6v5.6M13.6 10.6v5.6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.8" y="10.4" width="14.4" height="9.6" rx="2.2"/><path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6M12 14.4v2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.6 12S6 6.2 12 6.2 21.4 12 21.4 12 18 17.8 12 17.8 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4.4 9.4h3.2L12 5.4v13.2L7.6 14.6H4.4z"/><path d="M15.4 9.2a4 4 0 0 1 0 5.6M18 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4.4 9.4h3.2L12 5.4v13.2L7.6 14.6H4.4z"/><path d="M16 9.6l4.4 4.8M20.4 9.6 16 14.4"/></symbol>
+    <symbol id="i-type" viewBox="0 0 24 24"><path d="M4.4 6.6V4.4h15.2v2.2M12 4.4v15.2M8.6 19.6h6.8"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7" height="7" rx="1.6"/><rect x="13.4" y="3.6" width="7" height="7" rx="1.6"/><rect x="3.6" y="13.4" width="7" height="7" rx="1.6"/><rect x="13.4" y="13.4" width="7" height="7" rx="1.6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8.4 6.6h11.2M8.4 12h11.2M8.4 17.4h11.2M4.4 6.6v.1M4.4 12v.1M4.4 17.4v.1"/></symbol>
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="M14.6 3.6h5.8v5.8l-9 9-5.8-5.8z"/><path d="M5.6 12.6 3.4 20.6l8-2.2M13.4 10.6l-2.2-2.2"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3"/></symbol>
+    <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6"/><path d="M12 1.8v5.4M12 16.8v5.4M1.8 12h5.4M16.8 12h5.4"/><circle cx="12" cy="12" r="1.3"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h12M20 17h0"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2"/><path d="M15.4 5.4H6a2 2 0 0 0-2 2v9.4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16.4V4.6M7.6 9 12 4.6 16.4 9"/><path d="M4.6 15.4v3a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M15.4 8.6 13.6 13.6 8.6 15.4l1.8-5z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3.4 8.8a13 13 0 0 1 17.2 0M6.4 12.2a8.6 8.6 0 0 1 11.2 0M9.4 15.6a4.2 4.2 0 0 1 5.2 0"/><circle cx="12" cy="19" r="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3.2" y="7.4" width="17.6" height="12.2" rx="2.2"/><path d="M8.8 7.4V5.6a1.6 1.6 0 0 1 1.6-1.6h3.2a1.6 1.6 0 0 1 1.6 1.6v1.8M3.2 12.4h17.6M11 12.4v2.4h2v-2.4"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect x="2.8" y="6.4" width="18.4" height="11.2" rx="1.8"/><circle cx="12" cy="12" r="2.6"/><path d="M6 6.4v11.2M18 6.4v11.2"/></symbol>
+    <symbol id="i-med" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.6v8.8M7.6 12h8.8"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3.2" y="6.6" width="11.6" height="10.8" rx="2"/><path d="M14.8 11l6-3.2v8.4l-6-3.2z"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M4.4 5.6h15.2v10.2H11l-4.4 3.4v-3.4H4.4z"/><path d="M8 9.2h8M8 12h5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M3.6 12 20.4 3.6 15.6 20.4l-3.6-6z"/><path d="M12 14.4 20.4 3.6"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.4 20.4 8 12 12.6 3.6 8z"/><path d="M3.6 12.6 12 17.2l8.4-4.6M3.6 16.8 12 21.4l8.4-4.6"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6.4" y="6.4" width="11.2" height="11.2" rx="2"/><rect x="10" y="10" width="4" height="4" rx="1"/><path d="M9.4 3.4v3M14.6 3.4v3M9.4 17.6v3M14.6 17.6v3M3.4 9.4h3M3.4 14.6h3M17.6 9.4h3M17.6 14.6h3"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M2.8 12.4h4l2-5.2 3.2 10 2.4-6.4 1.6 3.2h5.2"/></symbol>
+    <symbol id="i-trend-up" viewBox="0 0 24 24"><path d="M3.6 17.4 9 12l3.4 3.4L20.4 7.4"/><path d="M15.4 7.4h5v5"/></symbol>
+    <symbol id="i-trend-down" viewBox="0 0 24 24"><path d="M3.6 6.6 9 12l3.4-3.4 8 8"/><path d="M15.4 16.6h5v-5"/></symbol>
+    <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M7 3.6h10M7 20.4h10"/><path d="M7.6 3.6c0 4.4 4.4 5 4.4 8.4s-4.4 4-4.4 8.4M16.4 3.6c0 4.4-4.4 5-4.4 8.4s4.4 4 4.4 8.4"/></symbol>
+    <symbol id="i-dna" viewBox="0 0 24 24"><path d="M8.4 3.6c0 4.6 7.2 5.4 7.2 10.2v6.6M15.6 3.6c0 4.6-7.2 5.4-7.2 10.2v6.6"/><path d="M9.8 6.8h4.4M9.8 17.2h4.4M10.4 12h3.2"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4.4 20.4V5.2a1.6 1.6 0 0 1 1.6-1.6h7.2a1.6 1.6 0 0 1 1.6 1.6v15.2"/><path d="M14.8 10.4h4a1.6 1.6 0 0 1 1.6 1.6v8.4M3.2 20.4h17.6M7.6 7.6h1.6M11.2 7.6h1.6M7.6 11.2h1.6M11.2 11.2h1.6M7.6 14.8h1.6M11.2 14.8h1.6"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3.6 18.4 5.2 7.2l4.4 4.2L12 5l2.4 6.4 4.4-4.2 1.6 11.2z"/><path d="M3.6 18.4h16.8"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 3.4v17.2"/><path d="M6 5h11.6l-2 4 2 4H6z"/></symbol>
+    <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3.6 9.4 12 4l8.4 5.4"/><path d="M5.6 9.4v8.2M10 9.4v8.2M14 9.4v8.2M18.4 9.4v8.2M3.2 20.4h17.6"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.4A8.4 8.4 0 0 1 9.6 4a8.6 8.6 0 1 0 10.4 10.4z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.6 15.6 20.4 20.4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3.6 5.4h16.8l-6.4 7.6v6.2l-4 2.2v-8.4z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="17.6" cy="6.4" r="2.8"/><circle cx="6.4" cy="12" r="2.8"/><circle cx="17.6" cy="17.6" r="2.8"/><path d="M8.9 10.6l6.2-3M8.9 13.4l6.2 3"/></symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M5.4 5.4a2 2 0 0 1 2-2h11.2v15.2a2 2 0 0 0 2 2H7.4a2 2 0 0 1-2-2z"/><path d="M9 7.8h6.6M9 11.4h6.6M9 15h4"/></symbol>
+    <symbol id="i-mask" viewBox="0 0 24 24"><path d="M4.4 6.4h15.2v6c0 3.6-3.4 6-7.6 6s-7.6-2.4-7.6-6z"/><path d="M8 10.4h1.6M14.4 10.4H16M9.6 14.6c1.5.9 3.3.9 4.8 0"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 32 32"><path d="M16 3.2 27.6 24H4.4z"/><path d="M10.4 24 16 14.4 21.6 24"/><path d="M13.6 20.4h4.8"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.2"/><circle cx="9" cy="9.8" r="1.7"/><path d="M4 17.6 9.6 12l3.4 3.4 2.6-2.4 4.6 4.6"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.6a8.4 8.4 0 1 0 0 16.8c1.4 0 2.2-.9 2.2-2 0-1-.7-1.6-.7-2.4 0-.9.8-1.6 1.8-1.6h1.3a3.9 3.9 0 0 0 3.9-3.9c0-3.6-3.9-6.9-8.5-6.9z"/><circle cx="8.2" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11.8" cy="7.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.6" cy="9.4" r="1.15" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M4.4 10.4v3.2a1.6 1.6 0 0 0 1.6 1.6h1.5l8.1 4.2V5.4L7.5 9.6H6a1.6 1.6 0 0 0-1.6 1.6z"/><path d="M17.8 9.6a4 4 0 0 1 0 4.8"/><path d="M7.6 15.2v4.6"/></symbol>
+    <symbol id="i-swords" viewBox="0 0 24 24"><path d="M3.8 3.8h3.4l6.6 6.6-3.4 3.4-6.6-6.6z"/><path d="M20.2 3.8h-3.4l-6.6 6.6 3.4 3.4 6.6-6.6z"/><path d="M7.4 16.6l-2.8 2.8M16.6 16.6l2.8 2.8M6.2 15.4l2.4 2.4M17.8 15.4l-2.4 2.4"/></symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app" data-screen="boot">
+  <!-- 背景层 -->
+  <div class="bg-stack" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-a"></div>
+    <div class="bg-glow bg-glow-b"></div>
+    <div class="bg-glow bg-glow-c"></div>
+    <div class="bg-scan"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-vignette"></div>
+  </div>
+  <div class="cursor-aura" id="cursor-aura" aria-hidden="true"></div>
+
+  <!-- ══════════════════════ 引导启动屏 ══════════════════════ -->
+  <section class="screen screen-boot is-active" id="screen-boot" aria-label="终端引导">
+    <div class="boot-frame glass-panel">
+      <header class="boot-head">
+        <span class="brand-mark" aria-hidden="true"><svg class="icon icon-xl"><use href="#i-logo"/></svg></span>
+        <div class="boot-title">
+          <h1 class="display">巅峰回廊 <span class="boot-title-en">APEX CORRIDOR</span></h1>
+          <p class="boot-sub">电竞职业选手人生模拟器 · 叙事引擎终端 <span class="mono dim">v0.9.4-hkg</span></p>
+        </div>
+        <div class="boot-node mono">
+          <span class="dot-pulse"></span>HKG-03 节点
+        </div>
+      </header>
+
+      <div class="boot-body">
+        <div class="boot-log" id="boot-log" role="log" aria-live="polite" aria-label="启动自检日志">
+          <p class="boot-line" data-delay="0"><span class="ok">[ OK ]</span> 载入港服终端外壳 <span class="mono dim">shell/hkg-03.bin</span></p>
+          <p class="boot-line" data-delay="1"><span class="ok">[ OK ]</span> 校验叙事引擎权重 <span class="mono dim">story-engine.weights · 14 维</span></p>
+          <p class="boot-line" data-delay="2"><span class="ok">[ OK ]</span> 挂载选手数据库 <span class="mono dim">players.db · 12,480 条履历</span></p>
+          <p class="boot-line" data-delay="3"><span class="warn">[ .. ]</span> 同步赛季时间线 <span class="mono dim">封测期 → 世界冠军赛期</span></p>
+          <p class="boot-line" data-delay="4"><span class="ok">[ OK ]</span> 社交舆情监听器已就绪 <span class="mono dim">sentiment-monitor</span></p>
+          <p class="boot-line" data-delay="5"><span class="warn">[ !! ]</span> 检测到未建档身份，进入角色创建向导</p>
+        </div>
+        <aside class="boot-side" aria-label="终端信息">
+          <div class="boot-side-block">
+            <span class="k">赛季</span><span class="v mono">S1 · 2026</span>
+          </div>
+          <div class="boot-side-block">
+            <span class="k">服务器</span><span class="v mono">香港 · 九龙</span>
+          </div>
+          <div class="boot-side-block">
+            <span class="k">延迟</span><span class="v mono">14 ms</span>
+          </div>
+          <div class="boot-readout mono" id="boot-readout">0x0000 · 初始化内存映射</div>
+        </aside>
+      </div>
+
+      <footer class="boot-foot">
+        <div class="boot-progress" role="progressbar" aria-label="载入进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="boot-progressbar">
+          <div class="boot-progress-fill" id="boot-progress-fill"></div>
+          <span class="boot-progress-txt mono" id="boot-progress-txt">0%</span>
+        </div>
+        <button type="button" class="btn btn-primary btn-lg boot-enter" id="btn-boot-enter" disabled>
+          <svg class="icon"><use href="#i-play"/></svg><span>按任意键进入建档</span>
+        </button>
+        <p class="boot-hint dim">提示：本作为叙事驱动原型，所有抉择都会写入选手履历。建议在 1440px 以上宽度浏览。</p>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ 角色创建向导 ══════════════════════ -->
+  <section class="screen screen-creator" id="screen-creator" aria-label="角色创建向导">
+    <header class="creator-head glass-panel corner-marks">
+      <div class="creator-head-main">
+        <h2>角色创建向导</h2>
+        <p>建档数据将写入港服选手档案库 · 叙事引擎据此生成你的整段职业生涯</p>
+      </div>
+      <nav class="creator-steps steps" id="creator-steps" aria-label="建档步骤进度"></nav>
+      <div class="creator-head-meta">
+        <span class="tag" id="creator-meta-diff" data-tone="dim">难度 · 未选择</span>
+        <span class="tag" id="creator-meta-mode" data-tone="dim">模式 · 未选择</span>
+      </div>
+    </header>
+
+    <div class="creator-body glass-panel corner-marks scroll-y" id="creator-body">
+      <!-- 步骤 1 · 难度 -->
+      <article class="step-panel is-active" id="step-1" data-step="1" aria-labelledby="step-1-title">
+        <div class="step-head">
+          <h3 id="step-1-title"><svg class="icon"><use href="#i-shield"/></svg>难度选择</h3>
+          <p>难度决定初始资源、天赋品质保底、舆论环境与伤病概率。地狱难度下，一次错误的手术决定就可能终结职业生涯。</p>
+          <span class="step-tip"><svg class="icon icon-xs"><use href="#i-info"/></svg>建档后难度不可更改，但可在设置中随时查阅规则</span>
+        </div>
+        <div class="pick-grid" data-cols="4" id="grid-difficulty" role="radiogroup" aria-label="难度选择"></div>
+        <div class="alert" data-tone="warn" style="margin-top:18px">
+          <svg class="icon"><use href="#i-warn"/></svg>
+          <div>
+            <div class="alert-title">新手上路提示</div>
+            首次游玩建议选择「简单」或「天选之人」。困难与地狱难度会显著提高伤病、舆论与合同风险，但它们也解锁独占的
+            <span class="acc">逆境叙事线</span>与<span class="gold">传奇结局</span>。
+          </div>
+        </div>
+        <div style="margin-top:20px">
+          <div class="sec-title"><svg class="icon"><use href="#i-list"/></svg>难度规则对照</div>
+          <div class="inset" style="padding:2px 8px 8px;overflow-x:auto">
+            <table class="dtable">
+              <thead>
+                <tr><th>难度</th><th class="num">属性修正</th><th class="num">天赋保底</th><th class="num">起始资金</th><th class="num">伤病概率</th><th class="num">判定 DC</th><th>独占内容</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="hl-gold">天选之人</td><td class="num">+12</td><td class="num">紫 · 史诗</td><td class="num">×1.6</td><td class="num">×0.6</td><td class="num">-1</td><td>媒体造神线 · 万众期待结局</td></tr>
+                <tr><td class="up">简单</td><td class="num">+6</td><td class="num">蓝 · 稀有</td><td class="num">×1.3</td><td class="num">×0.8</td><td class="num">-1</td><td>标准生涯线</td></tr>
+                <tr><td class="warnc">困难</td><td class="num">-3</td><td class="num">绿 · 优秀</td><td class="num">×0.8</td><td class="num">×1.3</td><td class="num">+1</td><td>逆袭叙事线 · 成就点 +20%</td></tr>
+                <tr><td class="down">地狱</td><td class="num">-9</td><td class="num">白 · 普通</td><td class="num">×0.5</td><td class="num">×1.8</td><td class="num">+2</td><td>地狱归来线 · 手部上限 -15 · 成就点 +50%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="alert" data-tone="cyan" style="margin-top:14px">
+          <svg class="icon"><use href="#i-dice"/></svg>
+          <div>
+            <div class="alert-title">判定公式</div>
+            <span class="mono">d20 + ⌊(属性值 - 50) / 6⌋ + 状态修正 + 保底修正</span> 对抗难度值 DC；
+            骰面 20 或总值 ≥ DC + 8 为大成功，骰面 1 或总值 ≤ DC - 8 为大失败。连续 3 次失败后获得 +3 保底修正（可在设置中关闭）。
+          </div>
+        </div>
+      </article>
+
+      <!-- 步骤 2 · 开局模式 -->
+      <article class="step-panel" id="step-2" data-step="2" aria-labelledby="step-2-title">
+        <div class="step-head">
+          <h3 id="step-2-title"><svg class="icon"><use href="#i-mask"/></svg>开局模式</h3>
+          <p>选择以既有传奇选手的档案开局，或从零塑造一个完全属于自己的选手。两种模式共享同一套叙事引擎与赛季规则。</p>
+        </div>
+        <div class="pick-grid" data-cols="2" id="grid-mode" role="radiogroup" aria-label="开局模式选择"></div>
+        <div id="legend-templates-wrap" class="hidden" style="margin-top:20px">
+          <div class="sec-title"><svg class="icon"><use href="#i-crown"/></svg>传奇模板</div>
+          <div class="pick-grid" data-cols="4" id="grid-legend" role="radiogroup" aria-label="传奇模板选择"></div>
+        </div>
+        <div class="alert" data-tone="cyan" style="margin-top:18px">
+          <svg class="icon"><use href="#i-info"/></svg>
+          <div>
+            <div class="alert-title">两种模式的差异</div>
+            「原著传奇」提供已完成的天赋与荣誉履历，但生涯预期极高、舆论不容许失败；「自创角色」属性成长空间更大，
+            天赋需自行掷骰觉醒，早期更脆弱也更自由。
+          </div>
+        </div>
+      </article>
+
+      <!-- 步骤 3 · 出身 -->
+      <article class="step-panel" id="step-3" data-step="3" aria-labelledby="step-3-title">
+        <div class="step-head">
+          <h3 id="step-3-title"><svg class="icon"><use href="#i-briefcase"/></svg>出身选择</h3>
+          <p>出身决定你的起点资源、初始属性倾向、社交圈层与专属事件线。每一条出身都有无法回避的代价。</p>
+        </div>
+        <div class="pick-grid" data-cols="5" id="grid-origin" role="radiogroup" aria-label="出身选择"></div>
+        <div style="margin-top:20px">
+          <div class="sec-title"><svg class="icon"><use href="#i-list"/></svg>出身对照</div>
+          <div class="inset" style="padding:2px 8px 6px;overflow-x:auto">
+            <table class="dtable" id="origin-compare-table">
+              <thead>
+                <tr><th>出身</th><th class="num">起始金钱</th><th class="num">属性修正</th><th class="num">人气</th><th class="num">手部健康</th><th>专属事件线</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+
+      <!-- 步骤 4 · 天赋觉醒 -->
+      <article class="step-panel" id="step-4" data-step="4" aria-labelledby="step-4-title">
+        <div class="step-head">
+          <h3 id="step-4-title"><svg class="icon"><use href="#i-dna"/></svg>天赋觉醒</h3>
+          <p>先选择天赋倾向（影响掷骰的权重组），再掷骰唤醒天赋。品质由白到金共五阶，难度决定保底下限。同一角色仅可锁定一枚天赋。</p>
+          <span class="step-tip"><svg class="icon icon-xs"><use href="#i-dice"/></svg>掷骰结果可重掷 3 次 · 锁定后不可更改</span>
+        </div>
+        <div class="talent-layout">
+          <div class="col">
+            <div>
+              <div class="sub-title">天赋倾向（可多选，影响品质权重）</div>
+              <div class="talent-directions" id="talent-directions" role="group" aria-label="天赋方向"></div>
+            </div>
+            <div>
+              <div class="sub-title" style="display:flex;align-items:center;gap:8px">
+                觉醒候选
+                <span class="tag" id="talent-rolls-left" data-tone="cyan">剩余重掷 3</span>
+                <span class="tag hidden" id="talent-locked-tag" data-tone="gold">已锁定</span>
+              </div>
+              <div class="talent-pool" id="talent-pool" aria-live="polite">
+                <div class="empty">
+                  <svg class="icon"><use href="#i-dice"/></svg>
+                  <div class="empty-title">尚未觉醒</div>
+                  <div class="tiny">先选择天赋倾向，然后按下「掷骰觉醒天赋」</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="col">
+            <div class="talent-roll-zone corner-marks" id="talent-roll-zone">
+              <div class="dice-stage" id="talent-dice-stage">
+                <div class="dice-orbit" aria-hidden="true"></div>
+                <div class="dice-orbit dice-orbit-2" aria-hidden="true"></div>
+                <div class="dice-core" id="talent-dice-core" role="img" aria-label="天赋觉醒骰子">
+                  <span class="dice-num" id="talent-dice-num">--</span>
+                  <span class="dice-cap">TALENT ROLL</span>
+                </div>
+              </div>
+              <button type="button" class="roll-btn" id="btn-talent-roll">
+                <svg class="icon icon-lg"><use href="#i-dice"/></svg><span id="btn-talent-roll-label">掷骰觉醒天赋</span>
+              </button>
+              <div class="row-tight tiny dim" id="talent-roll-readout">品质权重组：未选择倾向</div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px" id="talent-detail-host">
+              <div class="sec-title"><svg class="icon"><use href="#i-sparkle"/></svg>已选天赋</div>
+              <div class="empty" id="talent-detail-empty">
+                <svg class="icon"><use href="#i-dna"/></svg>
+                <div class="empty-title">等待觉醒</div>
+                <div class="tiny">候选天赋将显示品质、方向与具体数值效果</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <!-- 步骤 5 · 基础档案 -->
+      <article class="step-panel" id="step-5" data-step="5" aria-labelledby="step-5-title">
+        <div class="step-head">
+          <h3 id="step-5-title"><svg class="icon"><use href="#i-id"/></svg>基础档案</h3>
+          <p>这些资料会出现在赛后采访、直播间弹幕、转会传闻与关系事件中。部分字段（性格、性向、口头禅）会显著改变 NPC 的反应。</p>
+        </div>
+        <div class="profile-layout">
+          <div class="profile-form">
+            <div class="field">
+              <label class="field-label" for="input-profile-name"><svg class="icon"><use href="#i-user"/></svg>姓名</label>
+              <div class="input-group">
+                <input class="input" id="input-profile-name" type="text" maxlength="12" placeholder="例：江屿" autocomplete="off">
+                <button type="button" class="btn btn-sm" id="btn-random-name" title="随机姓名"><svg class="icon icon-xs"><use href="#i-refresh"/></svg></button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="input-profile-id"><svg class="icon"><use href="#i-terminal"/></svg>选手 ID</label>
+              <input class="input" id="input-profile-id" type="text" maxlength="12" placeholder="3-12 位英文/数字，例：Tide" autocomplete="off" spellcheck="false">
+              <span class="id-check" id="id-check"></span>
+              <span class="field-hint">ID 会成为弹幕与解说的称呼，也将刻在队服与奖杯上</span>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-users"/></svg>性别</span>
+              <div class="row-tight wrap" id="profile-gender" role="radiogroup" aria-label="性别"></div>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-heart"/></svg>性向</span>
+              <div class="row-tight wrap" id="profile-orientation" role="radiogroup" aria-label="性向"></div>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-sparkle"/></svg>感情态度</span>
+              <div class="row-tight wrap" id="profile-love" role="radiogroup" aria-label="感情态度"></div>
+              <span class="field-hint">决定情缘线的推进速度与公开度取舍</span>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-hourglass"/></svg>年龄</span>
+              <div class="range-row">
+                <input class="range" id="input-profile-age" type="range" min="16" max="34" step="1" value="18" aria-label="年龄">
+                <span class="range-val mono" id="val-profile-age">18 岁</span>
+              </div>
+              <span class="field-hint" id="age-hint">18 岁：青训黄金年龄，手感与反应处于峰值</span>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-rank"/></svg>身高</span>
+              <div class="range-row">
+                <input class="range" id="input-profile-height" type="range" min="155" max="198" step="1" value="175" aria-label="身高">
+                <span class="range-val mono" id="val-profile-height">175 cm</span>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-eye"/></svg>外貌</span>
+              <div class="range-row">
+                <input class="range" id="input-profile-look" type="range" min="1" max="10" step="1" value="6" aria-label="外貌">
+                <span class="range-val mono" id="val-profile-look">6 / 10</span>
+              </div>
+              <span class="field-hint" id="look-hint">外貌影响商业代言与媒体曝光，与竞技水平无关</span>
+            </div>
+            <div class="field span-2 hidden" id="ovr-target-wrap">
+              <span class="field-label"><svg class="icon"><use href="#i-chart"/></svg>初始总评取点（自创角色）</span>
+              <div class="range-row">
+                <input class="range" id="input-ovr-target" type="range" min="40" max="99" step="1" value="64" aria-label="初始总评">
+                <span class="range-val mono" id="val-ovr-target">总评 64</span>
+              </div>
+              <span class="field-hint" id="ovr-target-hint">当前难度允许区间：—</span>
+              <span class="field-hint">总评由「位置权重 × 五项属性 ＋ 关键属性加成 － 短板惩罚」公式算得，此处只决定你的起点取点。</span>
+            </div>
+            <div class="field span-2">
+              <span class="field-label"><svg class="icon"><use href="#i-layers"/></svg>性格（最多 3 项）</span>
+              <div class="row-tight wrap" id="profile-traits" role="group" aria-label="性格"></div>
+              <span class="field-hint">性格决定关键抉择的隐藏加成：好胜者在落后局获得判定加成，佛系者更抗压但成长更慢</span>
+            </div>
+            <div class="field span-2">
+              <span class="field-label"><svg class="icon"><use href="#i-message"/></svg>口头禅</span>
+              <div class="row-tight wrap" id="profile-catchphrase" role="group" aria-label="口头禅预设"></div>
+              <input class="input" id="input-profile-catch" type="text" maxlength="18" placeholder="或自定义一句（赛后采访会用到）" autocomplete="off" style="margin-top:8px">
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-image"/></svg>选手印记</span>
+              <div class="sigil-picker" id="sigil-picker" role="radiogroup" aria-label="选手印记"></div>
+              <span class="field-hint">印记是程序生成的个人徽标，会出现在队服、直播间与大屏幕上</span>
+            </div>
+            <div class="field">
+              <span class="field-label"><svg class="icon"><use href="#i-note"/></svg>选手签名</span>
+              <input class="input" id="input-profile-sign" type="text" maxlength="16" placeholder="鼠标写不写都行，这里填一个签名式短语" autocomplete="off">
+              <span class="field-hint">签名用于周边、冠军皮肤与退役仪式</span>
+            </div>
+          </div>
+          <aside class="inset corner-marks" style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div class="sec-title"><svg class="icon"><use href="#i-id"/></svg>实时预览</div>
+            <div class="charcard">
+              <div class="sigil" style="--sig:66px" id="profile-sigil-preview"></div>
+              <div class="cc-main">
+                <div class="cc-name" id="profile-preview-name">待命名</div>
+                <div class="cc-meta" id="profile-preview-meta">ID · 年龄 · 身高</div>
+              </div>
+            </div>
+            <div class="hairline"></div>
+            <div class="col" style="gap:8px" id="profile-preview-tags"></div>
+            <div class="alert" data-tone="cyan" id="profile-trait-mod">
+              <svg class="icon"><use href="#i-info"/></svg>
+              <div>性格与外貌将实时换算为初始属性修正，选择后在此预览。</div>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <!-- 步骤 6 · 定位 -->
+      <article class="step-panel" id="step-6" data-step="6" aria-labelledby="step-6-title">
+        <div class="step-head">
+          <h3 id="step-6-title"><svg class="icon"><use href="#i-crosshair"/></svg>主位置 · 定位</h3>
+          <p>总评不是属性的平均值，而是按位置加权、关键属性加成、短板惩罚后得出的结果。同一个选手，打不同位置就是不同的总评——先确定你打哪里。</p>
+        </div>
+        <div class="pick-grid" data-cols="4" id="grid-position" role="radiogroup" aria-label="主位置选择"></div>
+        <div id="position-detail-host" style="margin-top:18px"></div>
+      </article>
+
+      <!-- 步骤 7 · 初始地点 -->
+      <article class="step-panel" id="step-7" data-step="7" aria-labelledby="step-7-title">
+        <div class="step-head">
+          <h3 id="step-7-title"><svg class="icon"><use href="#i-pin"/></svg>初始地点</h3>
+          <p>地点决定训练资源、联赛环境、网络条件、生活成本与语言关卡。出海意味着更高薪资与更强对手，也意味着孤独。</p>
+        </div>
+        <div class="tabbar" style="margin-bottom:16px" role="tablist" aria-label="地点分类">
+          <button class="tab" type="button" role="tab" id="tab-city-cn" aria-selected="true" aria-controls="grid-city-cn" data-city-tab="cn">中国城市</button>
+          <button class="tab" type="button" role="tab" id="tab-city-global" aria-selected="false" aria-controls="grid-city-global" data-city-tab="global">全球电竞城市</button>
+          <span class="tag" style="margin-left:auto;align-self:center" id="city-tab-hint">按青训体系与薪资水平排序</span>
+        </div>
+        <div class="pick-grid" data-cols="4" id="grid-city-cn" role="radiogroup" aria-label="中国城市"></div>
+        <div class="pick-grid hidden" data-cols="4" id="grid-city-global" role="radiogroup" aria-label="全球电竞城市"></div>
+        <div id="city-detail-host" style="margin-top:18px"></div>
+      </article>
+
+      <!-- 步骤 8 · 时间线 -->
+      <article class="step-panel" id="step-8" data-step="8" aria-labelledby="step-8-title">
+        <div class="step-head">
+          <h3 id="step-8-title"><svg class="icon"><use href="#i-calendar"/></svg>时间线</h3>
+          <p>选择从哪个赛季阶段切入。越早进入，世界越空白、机会越多；越晚进入，竞争越激烈、起点越高。阵容基准以《俱乐部资料》年表为准（2023 封测 → 2028 传奇时代）。</p>
+        </div>
+        <div class="pick-grid" data-cols="5" id="grid-timeline" role="radiogroup" aria-label="赛季阶段"></div>
+        <div id="timeline-detail-host" style="margin-top:18px"></div>
+      </article>
+
+      <!-- 步骤 9 · 俱乐部 -->
+      <article class="step-panel" id="step-9" data-step="9" aria-labelledby="step-9-title">
+        <div class="step-head">
+          <h3 id="step-9-title"><svg class="icon"><use href="#i-building"/></svg>选择俱乐部</h3>
+          <p>四大竞技赛区、12 支联赛队伍、10 支长期合作伙伴与 2 个临时席位。此处只列出俱乐部名称与文字资料——没有队标，也没有图标。</p>
+        </div>
+        <div class="tabbar" style="margin-bottom:12px" role="tablist" aria-label="赛区"><div class="row-tight wrap" id="club-region-tabs"></div></div>
+        <div class="row-tight wrap" style="margin-bottom:14px" id="club-tier-filter" role="group" aria-label="资源分级"></div>
+        <div class="club-layout">
+          <div class="club-list corner-marks" id="club-name-list" role="radiogroup" aria-label="俱乐部名称列表"></div>
+          <div id="club-detail-host"></div>
+        </div>
+      </article>
+
+      <!-- 步骤 10 · 开局导语 -->
+      <article class="step-panel" id="step-10" data-step="10" aria-labelledby="step-10-title">
+        <div class="step-head">
+          <h3 id="step-10-title"><svg class="icon"><use href="#i-scroll"/></svg>开局导语与首批选项</h3>
+          <p>叙事引擎已根据你的档案生成开局场景。选择其中一个作为你的第一个行动，职业生涯计时将从此刻开始。</p>
+        </div>
+        <div class="opening-layout">
+          <div class="opening-read corner-marks">
+            <div class="row-tight" style="margin-bottom:14px">
+              <span class="tag" id="opening-scene-tag" data-tone="cyan">序幕 · 待生成</span>
+              <span class="tag" data-tone="dim" id="opening-time-tag">S1 · 第 1 周</span>
+            </div>
+            <div class="op-lead" id="opening-lead">选择出身、地点与时间线后，叙事引擎将在此撰写你的开局。</div>
+            <div class="story" id="opening-story" style="margin-top:18px"></div>
+          </div>
+          <aside class="col">
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-target"/></svg>首批选项</div>
+              <div class="choices" id="opening-choices"></div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-pulse"/></svg>推演预览</div>
+              <div class="col" style="gap:8px" id="opening-preview">
+                <div class="tiny dim">选择选项后，此处会显示预计的状态变化与判定难度。</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <!-- 步骤 11 · 建档完成 -->
+      <article class="step-panel" id="step-11" data-step="11" aria-labelledby="step-11-title">
+        <div class="step-head">
+          <h3 id="step-11-title"><svg class="icon"><use href="#i-medal"/></svg>建档完成</h3>
+          <p>总评、属性上限、身价与合同全部由公式计算——面板上的数字与公式结果永远一致（附录N.8）。确认后即可进入主界面。</p>
+        </div>
+        <div class="summary-layout">
+          <div class="col">
+            <div class="card summary-card corner-marks" id="summary-card">
+              <div class="sigil" style="--sig:82px;margin:0 auto" id="final-sigil"></div>
+              <div class="sc-name" id="final-name">待命名</div>
+              <div class="sc-tag" id="final-tag">ID</div>
+              <div class="summary-tags" id="final-badges"></div>
+              <div class="tiny dim-2 mono" id="final-meta" style="text-align:center;margin-top:8px"></div>
+              <div class="hairline" style="margin:16px 0"></div>
+              <div class="row" style="justify-content:center;gap:18px">
+                <div class="ring ovr-ring" id="final-ovr-ring" style="--ring-size:104px;--val:60">
+                  <svg viewBox="0 0 100 100" aria-hidden="true">
+                    <circle class="ring-bg" cx="50" cy="50" r="42"></circle>
+                    <circle class="ring-val" cx="50" cy="50" r="42"></circle>
+                  </svg>
+                  <div class="ring-core">
+                    <span class="ring-num" id="final-ovr">--</span>
+                    <span class="ring-lab">总评 OVR</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pa-line" style="text-align:center;margin-top:10px">
+                <span class="tag" id="final-level" data-tone="blue">—</span>
+                <span class="tag" data-tone="dim">潜力 <b id="final-pa">--</b> · <span id="final-pa-label">—</span></span>
+                <span class="tag" data-tone="gold">身价 <b id="final-value">—</b></span>
+              </div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-chart"/></svg>总评演算</div>
+              <div class="small dim-2" id="final-ovr-calc">—</div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-dna"/></svg>天赋与体质</div>
+              <div id="final-talents"><div class="tiny dim">尚未觉醒天赋</div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="inset corner-marks" style="padding:16px">
+              <div class="sec-title"><svg class="icon"><use href="#i-pulse"/></svg>属性面板（状态修正后）</div>
+              <div class="attr-list" id="final-attrs"></div>
+            </div>
+            <div class="inset corner-marks" style="padding:16px">
+              <div class="sec-title"><svg class="icon"><use href="#i-building"/></svg>俱乐部与合同</div>
+              <div class="col" style="gap:8px" id="final-club"></div>
+            </div>
+          </div>
+        </div>
+        <div class="alert" data-tone="good" style="margin-top:18px">
+          <svg class="icon"><use href="#i-check"/></svg>
+          <div>
+            <div class="alert-title">建档数据已就绪</div>
+            点击右下角「进入主界面」写入存档。系统会自动生成首个存档槽（自动存档），你之后可另存 6 份手动存档。
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <footer class="creator-foot glass-panel">
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-creator-random-all">
+        <svg class="icon icon-sm"><use href="#i-refresh"/></svg>随机建档
+      </button>
+      <span class="keys-row">
+        <span><span class="kbd">←</span><span class="kbd">→</span>切换步骤</span>
+        <span><span class="kbd">R</span>重掷</span>
+      </span>
+      <div class="spacer"></div>
+      <span class="tiny dim mono" id="creator-hint" data-tone="dim">—</span>
+      <span class="tiny dim mono" id="creator-step-label">步骤 1 / 11 · 难度</span>
+      <button type="button" class="btn" id="btn-creator-prev" disabled>
+        <svg class="icon"><use href="#i-chev-l"/></svg>上一步
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-creator-next">
+        下一步<svg class="icon"><use href="#i-chev-r"/></svg>
+      </button>
+    </footer>
+  </section>
+
+  <!-- ══════════════════════ 主界面 ══════════════════════ -->
+  <section class="screen screen-main" id="screen-main" aria-label="主界面">
+    <header class="topbar" id="topbar">
+      <div class="topbar-brand">
+        <span class="bm"><svg class="icon icon-lg"><use href="#i-logo"/></svg></span>
+        <div class="topbar-brand-text">
+          <h1>巅峰回廊</h1>
+          <span>APEX CORRIDOR · HKG</span>
+        </div>
+      </div>
+
+      <div class="topbar-clock">
+        <div class="tb-cell"><span class="k">赛季</span><span class="v mono" id="tb-season">S1 · 2026</span></div>
+        <div class="divider-v"></div>
+        <div class="tb-cell"><span class="k">时间</span><span class="v mono" id="tb-time">--</span></div>
+        <div class="divider-v"></div>
+        <div class="tb-cell"><span class="k">赛季阶段</span><span class="v acc" id="tb-phase">--</span></div>
+        <div class="divider-v"></div>
+        <div class="tb-cell"><span class="k">总评（位置加权）</span><span class="v mono" id="tb-ovr">--</span></div>
+        <div class="divider-v"></div>
+        <div class="tb-cell"><span class="k">联赛排名</span><span class="v mono" id="tb-rank">--</span></div>
+      </div>
+
+      <div class="ticker" style="flex:1;min-width:0" aria-label="世界快讯滚动">
+        <span class="ticker-tag"><svg class="icon icon-xs"><use href="#i-globe"/></svg>快讯</span>
+        <div class="ticker-track" id="ticker-track"></div>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="btn btn-sm btn-line" id="btn-ui-mode" data-tip="切换 叙事模式 / 酒馆模式（V）" aria-label="切换界面模式"><svg class="icon icon-xs"><use href="#i-message"/></svg><span id="ui-mode-label">酒馆模式</span></button>
+        <button type="button" class="btn btn-icon btn-ghost hidden" id="btn-cheat-menu" data-tip="作弊菜单（X）· 本存档所有成就标记为作弊获得" aria-label="作弊菜单"><svg class="icon"><use href="#i-terminal"/></svg></button>
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-open-calendar" data-tip="赛程日历（C）" aria-label="赛程日历"><svg class="icon"><use href="#i-calendar"/></svg></button>
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-open-broadcast" data-tip="进入比赛直播（B）" aria-label="比赛直播"><svg class="icon"><use href="#i-video"/></svg></button>
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-open-saves-top" data-tip="存档清单（S）" aria-label="存档清单"><svg class="icon"><use href="#i-save"/></svg></button>
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-open-help" data-tip="操作指南（H）" aria-label="操作指南"><svg class="icon"><use href="#i-info"/></svg></button>
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-open-settings" data-tip="终端设置（,) " aria-label="设置"><svg class="icon"><use href="#i-gear"/></svg></button>
+        <button type="button" class="btn btn-icon btn-line" id="btn-toggle-dashboard" data-tip="展开变量看板（Tab）" aria-label="展开变量看板"><svg class="icon"><use href="#i-layers"/></svg></button>
+      </div>
+    </header>
+
+    <div class="hud-grid">
+      <!-- 左侧主叙事区（叙事模式 / 酒馆模式共用此列） -->
+      <main class="narrative-col" id="narrative-col" aria-label="主叙事区">
+        <section class="tavern-panel hidden" id="tavern-panel" aria-label="酒馆模式"></section>
+        <div class="narrative-head glass-panel corner-marks">
+          <span class="chapter-chip">
+            <svg class="icon icon-sm"><use href="#i-scroll"/></svg>
+            <span id="chapter-name">序幕</span>
+            <span class="cn" id="chapter-index">CH.00</span>
+          </span>
+          <span class="tag" data-tone="dim" id="scene-tag">场景 · 训练室</span>
+          <span class="tag" data-tone="cyan" id="story-mode-tag">叙事引擎 · 本地推演</span>
+          <span class="gen-indicator" id="gen-indicator" aria-live="polite">
+            <span class="gen-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span id="gen-text">待命</span>
+          </span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-skip-typing" data-tip="跳过打字动画（空格）"><svg class="icon icon-xs"><use href="#i-play"/></svg>跳过</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-scroll-bottom" data-tip="跳到最新内容"><svg class="icon icon-xs"><use href="#i-chev-d"/></svg>最新</button>
+          </div>
+        </div>
+
+        <div id="banner-host" style="display:flex;flex-direction:column;gap:8px"></div>
+
+        <section class="narrative-stage glass-panel corner-marks">
+          <div class="narrative-scroll scroll-y" id="story-scroll" role="log" aria-live="polite" aria-label="剧情文本"></div>
+          <div class="narrative-foot">
+            <div class="between" style="gap:12px">
+              <span class="hud-label"><svg class="icon icon-xs"><use href="#i-target"/></svg>可执行抉择</span>
+              <span class="tiny dim mono" id="choice-hint">按数字键 1-9 快速选择</span>
+            </div>
+            <div class="choices" id="choice-list" role="group" aria-label="剧情选项"></div>
+            <div class="narrative-tools">
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-continue" data-tip="推进到下一场景（空格）">
+                <svg class="icon icon-xs"><use href="#i-chev-r"/></svg>继续推演
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-open-training" data-tip="安排本周日程（T）">
+                <svg class="icon icon-xs"><use href="#i-clock"/></svg>日程规划
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" id="btn-open-media" data-tip="查看舆论与媒体（M）">
+                <svg class="icon icon-xs"><use href="#i-mic"/></svg>舆论平台
+              </button>
+              <span class="tiny dim" style="margin-left:auto" id="turn-readout">回合 0 · 已执行 0 次抉择</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- 右侧变量状态栏 -->
+      <aside class="status-rail scroll-y" id="status-rail" aria-label="变量状态栏"></aside>
+
+      <!-- 右侧变量看板 -->
+      <aside class="dashboard glass-panel corner-marks" id="dashboard" aria-label="变量看板">
+        <div class="dash-head">
+          <svg class="icon icon-sm acc"><use href="#i-grid"/></svg>
+          <span class="dh-title">变量看板</span>
+          <span class="tag" data-tone="dim" id="dash-sync-tag">实时同步</span>
+          <button type="button" class="btn btn-icon btn-sm btn-ghost" id="btn-dash-collapse" style="margin-left:auto" aria-label="收起看板">
+            <svg class="icon icon-xs"><use href="#i-chev-r"/></svg>
+          </button>
+        </div>
+        <div class="dash-body">
+          <div class="dash-rail tab-rail" id="dash-tabs" role="tablist" aria-orientation="vertical" aria-label="看板分页"></div>
+          <div class="dash-panes scroll-y" id="dash-panes"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 底部操作区 -->
+    <footer class="bottombar" id="bottombar">
+      <div class="quick-choices" id="quick-choices" role="group" aria-label="数字快捷选项"></div>
+      <div class="free-action">
+        <div class="fa-row">
+          <input class="input" id="input-free-action" type="text" maxlength="60" autocomplete="off"
+                 placeholder="自由行动：描述你想做的事，叙事引擎推演结果与代价…" aria-label="自由行动输入">
+          <button type="button" class="btn btn-primary" id="btn-free-action" aria-label="提交自由行动">
+            <svg class="icon"><use href="#i-send"/></svg><span>推演</span>
+          </button>
+        </div>
+        <div class="fa-hints" id="fa-hints"></div>
+      </div>
+      <div class="bottom-tools">
+        <button type="button" class="btn btn-sm" id="btn-open-dossier"><svg class="icon icon-sm"><use href="#i-id"/></svg>查看档案</button>
+        <button type="button" class="btn btn-sm" id="btn-open-board"><svg class="icon icon-sm"><use href="#i-grid"/></svg>查看面板</button>
+        <button type="button" class="btn btn-sm" id="btn-open-saves"><svg class="icon icon-sm"><use href="#i-save"/></svg>存档清单</button>
+        <button type="button" class="btn btn-icon btn-ghost btn-sm" id="btn-open-help-bottom" data-tip="快捷键与规则（H）" aria-label="快捷键与规则"><svg class="icon icon-sm"><use href="#i-keyboard"/></svg></button>
+      </div>
+    </footer>
+  </section>
+
+  <!-- ══════════════════════ 模态框体系 ══════════════════════ -->
+
+  <!-- ① 选手档案 -->
+  <div class="modal hidden" id="modal-dossier" role="dialog" aria-modal="true" aria-labelledby="dossier-title" data-size="xl">
+    <div class="modal-backdrop" data-close="modal-dossier"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-id"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="dossier-title">选手档案</h2>
+          <p class="modal-sub">港服选手数据库 · 档案编号 <span class="mono" id="dossier-file-no">HKG-000000</span></p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-dossier-export"><svg class="icon icon-sm"><use href="#i-share"/></svg>导出档案</button>
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-dossier" aria-label="关闭档案"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div id="dossier-head-host"></div>
+        <div class="tabbar" style="margin:18px 0 16px" role="tablist" aria-label="档案分页">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-mtab="dossier" data-pane="dossier-overview">概览</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="dossier" data-pane="dossier-attrs">属性</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="dossier" data-pane="dossier-career">履历</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="dossier" data-pane="dossier-stats">生涯数据</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="dossier" data-pane="dossier-flags">剧情标记</button>
+        </div>
+        <div class="tab-panel is-active" id="dossier-overview">
+          <div class="sec-title"><svg class="icon"><use href="#i-pulse"/></svg>生涯概览</div>
+          <div class="stat-grid" id="dossier-overview-grid"></div>
+          <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-scroll"/></svg>背景与性格</div>
+          <div id="dossier-bio-host"></div>
+        </div>
+        <div class="tab-panel" id="dossier-attrs">
+          <div class="sec-title"><svg class="icon"><use href="#i-radar"/></svg>核心属性雷达</div>
+          <div id="dossier-radar-host"></div>
+          <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-chart"/></svg>属性明细</div>
+          <div class="attr-list" id="dossier-attr-list"></div>
+          <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-sparkle"/></svg>状态与处境</div>
+          <div class="attr-list" id="dossier-special-list"></div>
+        </div>
+        <div class="tab-panel" id="dossier-career">
+          <div class="sec-title"><svg class="icon"><use href="#i-medal"/></svg>履历时间线</div>
+          <div class="timeline" id="dossier-timeline"></div>
+        </div>
+        <div class="tab-panel" id="dossier-stats">
+          <div class="sec-title"><svg class="icon"><use href="#i-chart"/></svg>赛季生涯数据</div>
+          <div class="inset" style="padding:2px 8px 8px;overflow-x:auto">
+            <table class="dtable">
+              <thead><tr><th>赛季</th><th>俱乐部</th><th class="num">地图数</th><th class="num">K-D</th><th class="num">首杀率</th><th class="num">ACS</th><th class="num">评分</th><th>荣誉</th></tr></thead>
+              <tbody id="dossier-stats-body"></tbody>
+            </table>
+          </div>
+          <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-pulse"/></svg>状态趋势</div>
+          <div class="inset" style="padding:14px" id="dossier-trend-host"></div>
+        </div>
+        <div class="tab-panel" id="dossier-flags">
+          <div class="sec-title"><svg class="icon"><use href="#i-flag"/></svg>剧情标记与隐藏变量</div>
+          <div class="alert" data-tone="cyan" style="margin-bottom:14px">
+            <svg class="icon"><use href="#i-info"/></svg>
+            <div>剧情标记记录叙事引擎已经记住的关键事实，它们会在后续场景与结局判定中被引用。</div>
+          </div>
+          <div id="dossier-flags-host"></div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">档案会随生涯实时更新 · 最近同步 <span class="mono" id="dossier-sync">--</span></span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm" id="btn-dossier-to-board"><svg class="icon icon-sm"><use href="#i-grid"/></svg>打开完整面板</button>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-dossier">返回赛场</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ② 战术看板（完整变量面板） -->
+  <div class="modal hidden" id="modal-board" role="dialog" aria-modal="true" aria-labelledby="board-title" data-size="full">
+    <div class="modal-backdrop" data-close="modal-board"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-grid"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="board-title">战术看板</h2>
+          <p class="modal-sub">全部变量集中视图 · 可在设置中调整刷新频率与显示密度</p>
+        </div>
+        <div class="modal-head-actions">
+          <span class="tag" data-tone="cyan" id="board-sync-tag"><svg class="icon icon-xs"><use href="#i-wifi"/></svg>实时同步</span>
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-board" aria-label="关闭看板"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="board-grid" id="board-grid" aria-live="polite"></div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">提示：看板中的数值与右侧边栏共用同一数据源，任何改动都会立即同步。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-board">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ③ 存档清单 -->
+  <div class="modal hidden" id="modal-saves" role="dialog" aria-modal="true" aria-labelledby="saves-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-saves"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-save"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="saves-title">存档清单</h2>
+          <p class="modal-sub">本地存档存储于浏览器 localStorage · 关掉页面也不会丢失</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-saves" aria-label="关闭存档"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="between" style="margin-bottom:14px">
+          <div class="row-tight">
+            <span class="tag" data-tone="cyan"><svg class="icon icon-xs"><use href="#i-folder"/></svg>槽位 7 / 7</span>
+            <span class="tag" data-tone="dim" id="saves-usage">占用 0 KB</span>
+          </div>
+          <div class="row-tight">
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-saves-export"><svg class="icon icon-sm"><use href="#i-share"/></svg>导出全部</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-saves-import"><svg class="icon icon-sm"><use href="#i-layers"/></svg>导入存档</button>
+            <button type="button" class="btn btn-sm btn-danger" id="btn-saves-wipe"><svg class="icon icon-sm"><use href="#i-trash"/></svg>清空全部</button>
+          </div>
+        </div>
+        <div class="alert" data-tone="warn" style="margin-bottom:14px">
+          <svg class="icon"><use href="#i-warn"/></svg>
+          <div><div class="alert-title">关于覆盖与读取</div>读取存档会立即替换当前进度，未保存的进度将丢失。系统会在每次场景推进后自动写入「自动存档」槽位。</div>
+        </div>
+        <div class="col" style="gap:10px" id="saves-list"></div>
+        <div class="inset corner-marks" style="padding:14px;margin-top:16px">
+          <div class="sec-title"><svg class="icon"><use href="#i-terminal"/></svg>存档数据</div>
+          <div class="field">
+            <label class="field-label" for="textarea-saves-data">序列化数据（可复制备份 / 粘贴恢复）</label>
+            <textarea class="textarea" id="textarea-saves-data" rows="4" spellcheck="false" placeholder="点击「导出全部」生成 JSON，或粘贴 JSON 后点击「导入存档」。"></textarea>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">自动存档槽位不可手动覆盖，但可读取。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-saves">完成</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ④ 终端设置 -->
+  <div class="modal hidden" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-settings"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-gear"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="settings-title">终端设置</h2>
+          <p class="modal-sub">叙事引擎参数、界面外观、音效与数据管理</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-settings" aria-label="关闭设置"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="sec-title"><svg class="icon"><use href="#i-dna"/></svg>叙事引擎</div>
+        <div class="col" style="gap:14px">
+          <div class="field">
+            <label class="field-label" for="range-text-speed">文字速度</label>
+            <div class="range-row">
+              <input class="range" id="range-text-speed" type="range" min="0" max="100" step="5" value="62">
+              <span class="range-val mono" id="val-text-speed">62</span>
+            </div>
+            <span class="field-hint">影响剧情文本的打字机速度，0 为瞬间显示</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="select-story-length">叙事篇幅</label>
+            <select class="select" id="select-story-length">
+              <option value="short">精简 · 1-2 段，节奏更快</option>
+              <option value="normal" selected>标准 · 3-4 段，含对白与解说</option>
+              <option value="long">详尽 · 6 段以上，含环境与心理描写</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="range-temperature">推演随机度（温度）</label>
+            <div class="range-row">
+              <input class="range" id="range-temperature" type="range" min="0" max="100" step="5" value="70">
+              <span class="range-val mono" id="val-temperature">0.70</span>
+            </div>
+            <span class="field-hint">温度越高，剧情越出人意料；越低则越稳定、越符合数值预期</span>
+          </div>
+          <div class="row wrap" style="gap:18px">
+            <label class="switch"><input type="checkbox" id="switch-show-roll" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>显示骰子判定细节</span></label>
+            <label class="switch"><input type="checkbox" id="switch-pity" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>连续失败保底</span></label>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-palette"/></svg>界面外观</div>
+        <div class="col" style="gap:14px">
+          <div class="field">
+            <span class="field-label">终端主题</span>
+            <div class="row-tight wrap" id="theme-picker" role="radiogroup" aria-label="主题">
+              <button type="button" class="chip" data-theme-set="harbor" aria-pressed="true">港岛夜色</button>
+              <button type="button" class="chip" data-theme-set="server" aria-pressed="false">机房青绿</button>
+              <button type="button" class="chip" data-theme-set="neon" aria-pressed="false">赛博紫红</button>
+              <button type="button" class="chip" data-theme-set="kowloon" aria-pressed="false">铜锣湾霓虹</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">动效强度</span>
+            <div class="row-tight wrap" id="motion-picker" role="radiogroup" aria-label="动效强度">
+              <button type="button" class="chip" data-motion-set="full" aria-pressed="true">完整动效</button>
+              <button type="button" class="chip" data-motion-set="reduced" aria-pressed="false">精简动效（省电）</button>
+            </div>
+            <span class="field-hint">精简模式会关闭背景光晕、扫描线与大部分过渡动画，显著降低 GPU 占用</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="range-ui-scale">界面缩放</label>
+            <div class="range-row">
+              <input class="range" id="range-ui-scale" type="range" min="90" max="115" step="5" value="100">
+              <span class="range-val mono" id="val-ui-scale">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-volume"/></svg>音效</div>
+        <div class="col" style="gap:14px">
+          <div class="row wrap" style="gap:18px">
+            <label class="switch"><input type="checkbox" id="switch-sfx" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>界面音效总开关</span></label>
+            <label class="switch"><input type="checkbox" id="switch-sfx-dice" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>骰子与判定音</span></label>
+            <label class="switch"><input type="checkbox" id="switch-sfx-notify" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>通知与成就音</span></label>
+          </div>
+          <div class="field">
+            <label class="field-label" for="range-volume">音量</label>
+            <div class="range-row">
+              <input class="range" id="range-volume" type="range" min="0" max="100" step="5" value="45">
+              <span class="range-val mono" id="val-volume">45</span>
+            </div>
+            <span class="field-hint">音效由浏览器实时合成，不加载任何音频文件</span>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-save"/></svg>数据管理</div>
+        <div class="col" style="gap:14px">
+          <div class="row wrap" style="gap:18px">
+            <label class="switch"><input type="checkbox" id="switch-autosave" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>自动存档（每次场景推进）</span></label>
+            <label class="switch"><input type="checkbox" id="switch-dash-desktop"><span class="switch-track"><span class="switch-thumb"></span></span><span>宽屏下固定看板</span></label>
+          </div>
+          <div class="row-tight wrap">
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-settings-open-saves"><svg class="icon icon-sm"><use href="#i-folder"/></svg>打开存档清单</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-settings-reset-creator"><svg class="icon icon-sm"><use href="#i-refresh"/></svg>重开一局（回到建档）</button>
+            <button type="button" class="btn btn-sm btn-danger" id="btn-settings-hard-reset"><svg class="icon icon-sm"><use href="#i-trash"/></svg>清空全部本地数据</button>
+          </div>
+          <div class="alert" data-tone="danger">
+            <svg class="icon"><use href="#i-warn"/></svg>
+            <div><div class="alert-title">危险操作</div>「清空全部本地数据」会删除全部存档、设置与成就记录，且无法撤销。</div>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-info"/></svg>关于</div>
+        <div class="inset" style="padding:14px">
+          <div class="col" style="gap:8px">
+            <div class="between"><span class="dim">产品</span><span class="mono">巅峰回廊 · APEX CORRIDOR</span></div>
+            <div class="between"><span class="dim">版本</span><span class="mono">v0.9.4-hkg (原型)</span></div>
+            <div class="between"><span class="dim">构建</span><span class="mono">build 2026.02.14-f3a91c</span></div>
+            <div class="between"><span class="dim">叙事引擎</span><span class="mono">story-engine · 本地推演模式</span></div>
+            <div class="between"><span class="dim">后端连接</span><span class="mono warnc">未接入（纯前端原型）</span></div>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">设置会立即生效并写入本地存储。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-line" id="btn-open-api"><svg class="icon icon-xs"><use href="#i-link"/></svg>API 接入</button>
+        <button type="button" class="btn btn-sm" id="btn-settings-restore">恢复默认</button>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-settings">完成</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑤ 操作指南 -->
+  <div class="modal hidden" id="modal-help" role="dialog" aria-modal="true" aria-labelledby="help-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-help"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-info"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="help-title">操作指南与规则</h2>
+          <p class="modal-sub">快捷键、判定公式、难度规则与状态说明</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-help" aria-label="关闭指南"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="sec-title"><svg class="icon"><use href="#i-keyboard"/></svg>快捷键</div>
+        <div class="inset" style="padding:2px 8px 8px">
+          <table class="dtable">
+            <thead><tr><th>按键</th><th>功能</th><th>按键</th><th>功能</th></tr></thead>
+            <tbody>
+              <tr><td><span class="kbd">1</span>-<span class="kbd">9</span></td><td>选择对应编号的抉择</td><td><span class="kbd">空格</span></td><td>继续推演 / 跳过打字动画</td></tr>
+              <tr><td><span class="kbd">Enter</span></td><td>提交自由行动输入</td><td><span class="kbd">Esc</span></td><td>关闭当前浮层</td></tr>
+              <tr><td><span class="kbd">Tab</span></td><td>展开 / 收起变量看板</td><td><span class="kbd">D</span></td><td>打开选手档案</td></tr>
+              <tr><td><span class="kbd">S</span></td><td>打开存档清单</td><td><span class="kbd">B</span></td><td>进入比赛直播</td></tr>
+              <tr><td><span class="kbd">C</span></td><td>赛程日历</td><td><span class="kbd">T</span></td><td>日程规划</td></tr>
+              <tr><td><span class="kbd">M</span></td><td>舆论平台</td><td><span class="kbd">H</span></td><td>本指南</td></tr>
+              <tr><td><span class="kbd">Q</span></td><td>任务清单</td><td><span class="kbd">A</span></td><td>成就殿堂</td></tr>
+              <tr><td><span class="kbd">N</span></td><td>世界快讯</td><td><span class="kbd">X</span></td><td>作弊菜单（仅作弊模式）</td></tr>
+              <tr><td><span class="kbd">/</span></td><td>聚焦自由行动输入</td><td><span class="kbd">,</span></td><td>终端设置</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-pulse"/></svg>核心循环</div>
+        <div class="col" style="gap:10px">
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-target"/></svg><div><div class="alert-title">① 抉择</div>每个场景提供 3-5 个抉择，或使用自由行动输入任意文本。叙事引擎会结合你的属性、状态与剧情标记推演后果。</div></div>
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-dice"/></svg><div><div class="alert-title">② 判定</div>涉及风险的抉择会触发骰子判定。对枪判定：<span class="mono">1d20 ＋ 枪法÷10 ＋ 反应÷10 ＋ 身法÷10 ＋ 状态修正 ＋ 装备修正 ＋ 先手(±5) － 对手防御</span>，命中线 12—15 躯干 / 16—19 头部 / 20 完美爆头；其他判定：<span class="mono">1d20 ＋ 对应属性÷10 ＋ 情境修正 ≥ 成功线</span>。</div></div>
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-pulse"/></svg><div><div class="alert-title">③ 结算</div>根据结果改变属性、竞技状态（0—100）、手部健康、伤病风险、名声、粉丝与关系，并可能触发状态效果、任务与成就。</div></div>
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-hourglass"/></svg><div><div class="alert-title">④ 时间推进</div>一次抉择通常消耗 0.5-3 天。赛季阶段会随周数推进，从封测期走向世界冠军赛期。</div></div>
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-briefcase"/></svg><div><div class="alert-title">⑤ 经营</div>通过日程规划、合同谈判、直播与转会管理长期收益，平衡训练强度与身体损耗。</div></div>
+          <div class="alert" data-tone="cyan"><svg class="icon"><use href="#i-trophy"/></svg><div><div class="alert-title">⑥ 结局</div>总评按位置权重实时计算（业余 / 半职业 / 职业 / 明星 / 传奇五档），等级晋升需通过突破检定；生涯终点由荣誉、财务、健康、关系与舆论五条线综合判定。</div></div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-dice"/></svg>判定与结果分级</div>
+        <div class="inset" style="padding:2px 8px 8px">
+          <table class="dtable">
+            <thead><tr><th>结果</th><th>条件</th><th>效果</th></tr></thead>
+            <tbody>
+              <tr><td class="hl-gold">大成功</td><td>骰面 20，或总值 ≥ 成功线 + 4</td><td>收益翻倍：属性暴击成长、隐藏剧情解锁</td></tr>
+              <tr><td class="up">成功</td><td>总值 ≥ 成功线</td><td>标准正收益</td></tr>
+              <tr><td class="hl">勉强成功</td><td>总值在成功线 -2 之内</td><td>正收益减半，可能附带疲劳或伤势</td></tr>
+              <tr><td>失败</td><td>总值低于成功线</td><td>负收益，并可能触发后续麻烦</td></tr>
+              <tr><td class="down">大失败</td><td>骰面 1</td><td>严重负收益，伤病 / 舆论危机 / 合同风险</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="alert" data-tone="warn" style="margin-top:12px">
+          <svg class="icon"><use href="#i-shield"/></svg>
+          <div><div class="alert-title">保底与修正</div>连续 3 次失败后，下一次同类判定 +3（可在设置中关闭）。状态修正：≥90 +2 ｜ 80—89 +1 ｜ 40—79 0 ｜ 20—39 -2 ｜ &lt;20 -4；状态 ≥90 触发「火热手感」，枪法判定 +10。手部健康低于 40 时枪法与反应各 -5。</div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-flame"/></svg>状态效果说明</div>
+        <div class="grid-2" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+          <div class="status-pill" data-tone="bad"><svg class="icon"><use href="#i-med"/></svg><div><div class="sp-name">腕部劳损</div><div class="sp-desc">枪法精度 -8，判定 -2；须在 3 周内治疗，否则恶化</div></div></div>
+          <div class="status-pill" data-tone="warn"><svg class="icon"><use href="#i-pulse"/></svg><div><div class="sp-name">疲劳预警</div><div class="sp-desc">连续高强度训练 5 回合触发：训练收益 -30%，继续硬练将触发伤病检定</div></div></div>
+          <div class="status-pill" data-tone="good"><svg class="icon"><use href="#i-flame"/></svg><div><div class="sp-name">连胜气势</div><div class="sp-desc">对枪与残局判定 +2，粉丝增长 +20%</div></div></div>
+          <div class="status-pill" data-tone="gold"><svg class="icon"><use href="#i-star"/></svg><div><div class="sp-name">版本红利</div><div class="sp-desc">突破检定与版本相关判定加成，新特工熟练度成长加快</div></div></div>
+          <div class="status-pill" data-tone="bad"><svg class="icon"><use href="#i-mic"/></svg><div><div class="sp-name">舆论风暴</div><div class="sp-desc">舆论热度≥15 触发：名声下降、商务受阻；公关行动与成绩可缓解</div></div></div>
+          <div class="status-pill" data-tone="warn"><svg class="icon"><use href="#i-hand"/></svg><div><div class="sp-name">带伤上阵</div><div class="sp-desc">全枪法类属性 -12，但教练信任 +5</div></div></div>
+        </div>
+
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-shield"/></svg>难度规则对照</div>
+        <div class="inset" style="padding:2px 8px 8px;overflow-x:auto">
+          <table class="dtable">
+            <thead><tr><th>难度</th><th class="num">初始总评</th><th class="num">气运</th><th class="num">重掷次数</th><th class="num">启动资金</th><th>规则</th></tr></thead>
+            <tbody>
+              <tr><td class="hl-gold">天选之人</td><td class="num">70—74</td><td class="num">90</td><td class="num">3 次</td><td class="num">10 万</td><td>训练收益 +30%，机缘权重翻倍，突破检定 +30</td></tr>
+              <tr><td class="up">简单</td><td class="num">62—66</td><td class="num">60</td><td class="num">2 次</td><td class="num">2 万</td><td>训练收益 ±0%，突破检定 +10</td></tr>
+              <tr><td class="warnc">困难</td><td class="num">52—56</td><td class="num">35</td><td class="num">1 次</td><td class="num">5000</td><td>训练收益 -10%，突破检定 -20，每 3 回合一次现实阻力</td></tr>
+              <tr><td class="down">地狱</td><td class="num">40—44</td><td class="num">15</td><td class="num">1 次</td><td class="num">1000</td><td>训练收益 -20%，突破检定 -40，每 2 回合一次生存危机</td></tr>
+              <tr><td class="down">作弊模式</td><td class="num">60—99</td><td class="num">99</td><td class="num">3 次</td><td class="num">无限</td><td>成就标记「作弊获得」，不参与正常结局评定</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">本原型未接入后端，所有推演均在浏览器本地完成。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-help">明白了</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑥ 世界快讯 -->
+  <div class="modal hidden" id="modal-news" role="dialog" aria-modal="true" aria-labelledby="news-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-news"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-globe"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="news-title">世界快讯</h2>
+          <p class="modal-sub">转会窗口、版本更新、赛程与舆论动态 · 每回合自动刷新</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-news" aria-label="关闭快讯"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="tabbar" style="margin-bottom:14px" role="tablist" aria-label="快讯分类">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-news-filter="all">全部</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="transfer">转会</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="patch">版本</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="match">赛事</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="media">舆论</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="injury">伤病</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-news-filter="biz">商业</button>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start">
+          <div class="col" style="gap:8px" id="news-list"></div>
+          <div class="inset corner-marks" style="padding:16px;position:sticky;top:0" id="news-detail"></div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">快讯内容为叙事引擎生成的虚构信息，与真实赛事无关。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-news">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑦ 任务清单 -->
+  <div class="modal hidden" id="modal-quests" role="dialog" aria-modal="true" aria-labelledby="quests-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-quests"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-tasks"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="quests-title">任务清单</h2>
+          <p class="modal-sub">主线目标、支线委托与每日训练</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-quests" aria-label="关闭任务"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="tabbar" style="margin-bottom:14px" role="tablist" aria-label="任务分类">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-quest-filter="main">主线</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-quest-filter="side">支线</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-quest-filter="daily">日常</button>
+        </div>
+        <div class="col" style="gap:10px" id="quests-list"></div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">完成后奖励会在结算时自动发放。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-quests">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑧ 成就殿堂 -->
+  <div class="modal hidden" id="modal-achievements" role="dialog" aria-modal="true" aria-labelledby="ach-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-achievements"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-medal"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="ach-title">成就殿堂</h2>
+          <p class="modal-sub">已解锁 <span class="mono acc" id="ach-count">0</span> / <span class="mono" id="ach-total">0</span> · 成就点 <span class="mono gold" id="ach-points">0</span></p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-achievements" aria-label="关闭成就"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="inset corner-marks" style="padding:16px;margin-bottom:16px">
+          <div class="row" style="gap:22px">
+            <div class="ring" style="--ring-size:92px">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="ring-bg" cx="50" cy="50" r="42"></circle>
+                <circle class="ring-val" cx="50" cy="50" r="42" id="ach-ring-arc"></circle>
+              </svg>
+              <div class="ring-core"><span class="ring-num" id="ach-ring-num">0%</span><span class="ring-lab">完成度</span></div>
+            </div>
+            <div class="grow">
+              <div class="sub-title">按品质统计</div>
+              <div class="row-tight wrap" id="ach-rarity-stats"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar" style="margin-bottom:14px" role="tablist" aria-label="成就筛选">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-ach-filter="all">全部</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-ach-filter="unlocked">已解锁</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-ach-filter="locked">未解锁</button>
+        </div>
+        <div class="col" style="gap:9px" id="ach-list"></div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">成就点可用于在生涯末期兑换「传奇殿堂」评级。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-achievements">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑨ 俱乐部与合同 -->
+  <div class="modal hidden" id="modal-contract" role="dialog" aria-modal="true" aria-labelledby="contract-title" data-size="xl">
+    <div class="modal-backdrop" data-close="modal-contract"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-briefcase"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="contract-title">俱乐部与合同</h2>
+          <p class="modal-sub">条款、绩效目标、队友与转会市场</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-contract" aria-label="关闭合同"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div id="contract-club-host"></div>
+        <div class="tabbar" style="margin:18px 0 16px" role="tablist" aria-label="合同分页">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-mtab="contract" data-pane="contract-terms">合同条款</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="contract" data-pane="contract-perf">绩效目标</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="contract" data-pane="contract-squad">选手与队友</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="contract" data-pane="contract-market">转会市场</button>
+        </div>
+        <div class="tab-panel is-active" id="contract-terms">
+          <div class="sec-title"><svg class="icon"><use href="#i-contract"/></svg>条款摘要</div>
+          <div class="inset" style="padding:2px 8px 8px;overflow-x:auto">
+            <table class="dtable">
+              <thead><tr><th>条款</th><th>内容</th><th>风险提示</th></tr></thead>
+              <tbody id="contract-terms-body"></tbody>
+            </table>
+          </div>
+          <div class="alert" data-tone="cyan" style="margin-top:14px">
+            <svg class="icon"><use href="#i-info"/></svg>
+            <div><div class="alert-title">谈判机制</div>合同年（剩余年限 ≤ 1）开启谈判窗口。谈判判定受近期表现、名气、教练信任与经纪人能力影响；违约金过高会锁死转会自由。</div>
+          </div>
+        </div>
+        <div class="tab-panel" id="contract-perf">
+          <div class="sec-title"><svg class="icon"><use href="#i-target"/></svg>赛季绩效目标</div>
+          <div class="col" style="gap:9px" id="contract-perf-list"></div>
+        </div>
+        <div class="tab-panel" id="contract-squad">
+          <div class="sec-title"><svg class="icon"><use href="#i-users"/></svg>阵容名单</div>
+          <div class="col" style="gap:9px" id="contract-squad-list"></div>
+        </div>
+        <div class="tab-panel" id="contract-market">
+          <div class="sec-title"><svg class="icon"><use href="#i-share"/></svg>转会市场</div>
+          <div class="alert" data-tone="warn" style="margin-bottom:14px">
+            <svg class="icon"><use href="#i-warn"/></svg>
+            <div><div class="alert-title">转会窗口</div>仅在休赛期与季中窗口开启。转会将重置队友信任与教练信任，并触发粉丝流失判定。</div>
+          </div>
+          <div class="col" style="gap:9px" id="contract-market-list"></div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim" id="contract-foot-note">合同的任何变动都会写入履历。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm" id="btn-contract-renew"><svg class="icon icon-sm"><use href="#i-contract"/></svg>发起续约谈判</button>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-contract">返回赛场</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑩ 情缘状态 -->
+  <div class="modal hidden" id="modal-romance" role="dialog" aria-modal="true" aria-labelledby="romance-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-romance"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-heart"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="romance-title">情缘状态</h2>
+          <p class="modal-sub">关系阶段、公开度与舆论影响</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-romance" aria-label="关闭情缘"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div id="romance-host"></div>
+        <div class="sec-title" style="margin-top:20px"><svg class="icon"><use href="#i-link"/></svg>关系阶段</div>
+        <div class="timeline" id="romance-stages"></div>
+        <div class="sec-title" style="margin-top:20px"><svg class="icon"><use href="#i-eye"/></svg>公开度影响</div>
+        <div class="col" style="gap:12px">
+          <div class="field">
+            <label class="field-label" for="range-romance-public">公开度</label>
+            <div class="range-row">
+              <input class="range" id="range-romance-public" type="range" min="0" max="100" step="5" value="0">
+              <span class="range-val mono" id="val-romance-public">保密</span>
+            </div>
+            <span class="field-hint">低公开度保护私生活但增加猜疑；高公开度会带来流量与商务，也会把感情暴露在舆论风暴中</span>
+          </div>
+          <div id="romance-impact"></div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">感情线的关键抉择同样会触发骰子判定。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-romance">返回赛场</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑪ 日程规划 -->
+  <div class="modal hidden" id="modal-schedule" role="dialog" aria-modal="true" aria-labelledby="schedule-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-schedule"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-clock"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="schedule-title">日程规划</h2>
+          <p class="modal-sub">分配本周 40 小时训练预算 · 提交后立即结算</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-schedule" aria-label="关闭日程"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="between" style="margin-bottom:14px">
+          <span class="tag" data-tone="cyan" id="schedule-budget-tag">已分配 40 / 40 小时</span>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-schedule-preset"><svg class="icon icon-sm"><use href="#i-refresh"/></svg>套用推荐方案</button>
+        </div>
+        <div class="col" style="gap:14px" id="schedule-controls"></div>
+        <div class="sec-title" style="margin-top:20px"><svg class="icon"><use href="#i-trend-up"/></svg>预期效果</div>
+        <div class="col" style="gap:8px" id="schedule-preview"></div>
+        <div class="alert" data-tone="warn" style="margin-top:14px" id="schedule-warning">
+          <svg class="icon"><use href="#i-warn"/></svg>
+          <div><div class="alert-title">负荷提醒</div>训练时长超过 32 小时会累积疲劳，连续两周超载将显著提升腕部与腰部伤病概率。</div>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">日程会消耗本周行动点，但带来稳定的属性成长。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm" data-close="modal-schedule">取消</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btn-schedule-submit"><svg class="icon icon-sm"><use href="#i-check"/></svg>提交日程</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑫ 赛程日历 -->
+  <div class="modal hidden" id="modal-calendar" role="dialog" aria-modal="true" aria-labelledby="calendar-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-calendar"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-calendar"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="calendar-title">赛程日历</h2>
+          <p class="modal-sub" id="calendar-sub">赛季 S1 · 常规赛阶段</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost" id="btn-cal-prev" aria-label="上个月"><svg class="icon"><use href="#i-chev-l"/></svg></button>
+          <button type="button" class="btn btn-icon btn-ghost" id="btn-cal-next" aria-label="下个月"><svg class="icon"><use href="#i-chev-r"/></svg></button>
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-calendar" aria-label="关闭日历"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="row-tight wrap" style="margin-bottom:14px">
+          <span class="tag" data-tone="cyan"><i class="dot-pulse" style="width:6px;height:6px;display:inline-block;border-radius:50%"></i>联赛比赛</span>
+          <span class="tag" data-tone="violet">媒体 / 商务</span>
+          <span class="tag" data-tone="green">休整日</span>
+          <span class="tag" data-tone="red">关键节点</span>
+          <span class="tag" data-tone="gold">今日</span>
+        </div>
+        <div class="cal-grid" id="calendar-grid"></div>
+        <div class="sec-title" style="margin-top:22px"><svg class="icon"><use href="#i-list"/></svg>本月日程明细</div>
+        <div class="col" style="gap:8px" id="calendar-list"></div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">比赛日会强制进入直播场景，无法跳过。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-calendar">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑬ 比赛直播 -->
+  <div class="modal hidden" id="modal-broadcast" role="dialog" aria-modal="true" aria-labelledby="bc-title" data-size="full">
+    <div class="modal-backdrop" data-close="modal-broadcast"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-video"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="bc-title">比赛直播</h2>
+          <p class="modal-sub" id="bc-sub">VCT CN 联赛 · 常规赛 · 解说：阿七 / 老 K</p>
+        </div>
+        <div class="modal-head-actions">
+          <span class="tag" data-tone="red" id="bc-live-tag"><i class="dot-live" style="width:6px;height:6px;display:inline-block;border-radius:50%"></i>LIVE</span>
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-broadcast" aria-label="退出直播"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="broadcast">
+          <div class="col" style="gap:14px;min-width:0">
+            <div class="bc-score">
+              <div class="bc-team">
+                <span class="bc-team-name acc" id="bc-team-a">我方</span>
+                <span class="bc-team-tag" id="bc-tag-a">--</span>
+                <span class="bc-kills" data-tone="cyan" id="bc-kills-a">0</span>
+              </div>
+              <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+                <span class="bc-timer" id="bc-timer">00:00</span>
+                <span class="tiny dim mono" id="bc-game-no">地图 1</span>
+                <span class="tiny dim mono" id="bc-bp-tag">BP：—</span>
+                <button type="button" class="btn btn-sm btn-line" id="btn-bc-play"><svg class="icon icon-sm"><use href="#i-play"/></svg>开始推演战局</button>
+              </div>
+              <div class="bc-team" data-side="right">
+                <span class="bc-team-name down" id="bc-team-b">对手</span>
+                <span class="bc-team-tag" id="bc-tag-b">--</span>
+                <span class="bc-kills" data-tone="red" id="bc-kills-b">0</span>
+              </div>
+            </div>
+
+            <div class="bc-gold">
+              <span class="mono acc" id="bc-gold-a">0</span>
+              <div class="bc-gold-bar"><i id="bc-gold-fill" style="width:50%"></i></div>
+              <span class="mono down" id="bc-gold-b">0</span>
+            </div>
+
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="between" style="margin-bottom:10px">
+                <span class="hud-label"><svg class="icon icon-xs"><use href="#i-pulse"/></svg>回合经济走势</span>
+                <span class="tiny dim mono" id="bc-diff-readout">经济差 0</span>
+              </div>
+              <div id="bc-chart-host"></div>
+            </div>
+
+            <div class="tabbar" role="tablist" aria-label="直播信息分页">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-mtab="bc" data-pane="bc-pane-log">回合日志</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="bc" data-pane="bc-pane-data">实时数据</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-mtab="bc" data-pane="bc-pane-cast">解说席</button>
+            </div>
+            <div class="tab-panel is-active" id="bc-pane-log">
+              <div class="bc-log scroll-y" id="bc-log"></div>
+            </div>
+            <div class="tab-panel" id="bc-pane-data">
+              <div class="inset" style="padding:2px 8px 8px;overflow-x:auto">
+                <table class="dtable">
+                  <thead><tr><th>选手</th><th>角色</th><th class="num">K-D</th><th class="num">ACS</th><th class="num">首杀</th><th class="num">爆头率</th><th class="num">残局</th></tr></thead>
+                  <tbody id="bc-data-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-panel" id="bc-pane-cast">
+              <div class="col" style="gap:8px" id="bc-cast"></div>
+            </div>
+          </div>
+
+          <aside class="col" style="gap:14px;min-width:0">
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-sword"/></svg>教练指令</div>
+              <div class="col" style="gap:7px" id="bc-orders"></div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-message"/></svg>直播弹幕</div>
+              <div class="danmu" id="bc-danmu"></div>
+            </div>
+            <div class="inset corner-marks" style="padding:14px">
+              <div class="sec-title"><svg class="icon"><use href="#i-target"/></svg>本图目标</div>
+              <div class="col" style="gap:7px" id="bc-goals"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">比赛结果会写入生涯数据，并直接影响合同、粉丝与士气。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-ghost" data-close="modal-broadcast">退出观战</button>
+        <button type="button" class="btn btn-sm btn-gold" id="btn-bc-settle" disabled><svg class="icon icon-sm"><use href="#i-trophy"/></svg>结算本图</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑭ 舆论平台 -->
+  <div class="modal hidden" id="modal-media" role="dialog" aria-modal="true" aria-labelledby="media-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-media"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-mic"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="media-title">舆论平台</h2>
+          <p class="modal-sub">热搜、社区、弹幕与媒体评论 · 情绪值 <span class="mono" id="media-sentiment">0</span></p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-media" aria-label="关闭舆论平台"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="tabbar" style="margin-bottom:14px" role="tablist" aria-label="舆论渠道">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-media-tab="hot">热搜榜</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-media-tab="forum">选手社区</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-media-tab="danmu">直播弹幕</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-media-tab="press">媒体评论</button>
+        </div>
+        <div id="media-body"></div>
+        <div class="sec-title" style="margin-top:20px"><svg class="icon"><use href="#i-megaphone"/></svg>公关行动</div>
+        <div class="pick-grid" data-cols="3" id="media-actions"></div>
+      </div>
+      <footer class="modal-foot">
+        <span class="tiny dim">舆论会在 1-3 个回合内自然衰减，也可能因新的失误再次引爆。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-media">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑮ 骰子判定（动态） -->
+  <div class="modal hidden" id="modal-dice" role="dialog" aria-modal="true" aria-labelledby="dice-title" data-size="sm">
+    <div class="modal-backdrop"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-dice"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="dice-title">能力判定</h2>
+          <p class="modal-sub" id="dice-sub">叙事引擎正在计算结果</p>
+        </div>
+      </header>
+      <div class="modal-body" style="text-align:center">
+        <div class="dice-stage">
+          <div class="dice-orbit" aria-hidden="true"></div>
+          <div class="dice-orbit dice-orbit-2" aria-hidden="true"></div>
+          <div class="dice-core" id="dice-core" role="img" aria-label="判定骰子">
+            <span class="dice-num" id="dice-num">--</span>
+            <span class="dice-cap" id="dice-cap">D20</span>
+          </div>
+        </div>
+        <div id="dice-verdict-host" style="min-height:52px;display:grid;place-items:center"></div>
+        <div class="dice-breakdown" id="dice-breakdown" style="margin-top:14px"></div>
+        <div class="inset" style="padding:12px;margin-top:16px;text-align:left" id="dice-effect-host"></div>
+      </div>
+      <footer class="modal-foot" style="justify-content:center">
+        <button type="button" class="btn btn-sm btn-primary" id="btn-dice-continue" disabled>继续</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑯ 天赋详情（动态） -->
+  <div class="modal hidden" id="modal-talent" role="dialog" aria-modal="true" aria-labelledby="talent-title" data-size="sm">
+    <div class="modal-backdrop" data-close="modal-talent"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-dna"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="talent-title">天赋解析</h2>
+          <p class="modal-sub">天赋品质与方向决定了成长曲线的形状</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-talent" aria-label="关闭天赋"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body" id="talent-modal-body"></div>
+      <footer class="modal-foot">
+        <span class="tiny dim">天赋共鸣值会随使用该天赋的行动提升。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-talent">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑯-B 作弊菜单（仅作弊模式可见） -->
+  <div class="modal hidden" id="modal-cheat" role="dialog" aria-modal="true" aria-labelledby="cheat-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-cheat"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-terminal"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="cheat-title">作弊菜单</h2>
+          <p class="modal-sub">无限元 · 任意总评 · 无敌状态 · 直接获得世界冠军 · 任意特工 · 跳过剧情</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-cheat" aria-label="关闭作弊菜单"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body" id="cheat-menu-body"></div>
+      <footer class="modal-foot">
+        <span class="tiny dim">作弊模式的存档不参与正常结局评定，且不可关闭。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-cheat">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑯-C 酒馆通用模态（世界书 / 预设 / 角色卡 / 变量 / 上下文 / 历史） -->
+  <div class="modal hidden" id="modal-tavern" role="dialog" aria-modal="true" aria-labelledby="tavern-modal-title" data-size="lg">
+    <div class="modal-backdrop" data-close="modal-tavern"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-message"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="tavern-modal-title">酒馆</h2>
+          <p class="modal-sub" id="tavern-modal-sub">SillyTavern 兼容面板</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-tavern" aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body" id="tavern-modal-body"></div>
+      <footer class="modal-foot" id="tavern-modal-foot"></footer>
+    </div>
+  </div>
+
+  <!-- ⑰ 关系档案（动态） -->  <div class="modal hidden" id="modal-npc" role="dialog" aria-modal="true" aria-labelledby="npc-title" data-size="md">
+    <div class="modal-backdrop" data-close="modal-npc"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph"><svg class="icon"><use href="#i-link"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="npc-title">关系档案</h2>
+          <p class="modal-sub" id="npc-sub">关系网中的每一个人都会影响你的生涯</p>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="btn btn-icon btn-ghost modal-close" data-close="modal-npc" aria-label="关闭关系档案"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </header>
+      <div class="modal-body" id="npc-body"></div>
+      <footer class="modal-foot">
+        <span class="tiny dim">好感度低于 30 会触发负面事件，高于 85 会解锁专属援助。</span>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm btn-primary" data-close="modal-npc">关闭</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ⑱ 通用确认（动态） -->
+  <div class="modal hidden" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" data-size="sm">
+    <div class="modal-backdrop" data-close="modal-confirm"></div>
+    <div class="modal-shell">
+      <header class="modal-head">
+        <span class="mh-glyph" id="confirm-glyph"><svg class="icon"><use href="#i-warn"/></svg></span>
+        <div>
+          <h2 class="modal-title" id="confirm-title">确认操作</h2>
+          <p class="modal-sub" id="confirm-sub">此操作需要二次确认</p>
+        </div>
+      </header>
+      <div class="modal-body" id="confirm-body"></div>
+      <footer class="modal-foot">
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-sm" data-close="modal-confirm">取消</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btn-confirm-ok">确认</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 通用浮层容器 -->
+  <div class="modal-root" id="modal-root" aria-live="polite"></div>
+  <div class="toast-root" id="toast-root" aria-live="polite" aria-label="系统通知"></div>
+  <div class="fx-root" id="fx-root" aria-hidden="true"></div>
+  <div class="tooltip-root" id="tooltip-root" role="tooltip" aria-hidden="true"></div>
+  <div class="screen-sr" id="sr-announcer" role="status" aria-live="polite"></div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/state.js"></script>
+<script src="assets/js/creator.js"></script>
+<script src="assets/js/panels.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/tavern.js"></script>
+<script src="assets/js/broadcast.js"></script>
+<script src="assets/js/narrative.js"></script>
+<script src="assets/js/saves.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
