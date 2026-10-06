@@ -527,3 +527,11 @@
 /* 比赛入口：非比赛日变灰 */
 .btn.is-off{opacity:.42;filter:grayscale(.5)}
 .btn.is-off:hover{border-color:var(--line-2);transform:none}
+
+/* 单一界面：撑满可用高度（侧栏/楼层流拉长，输入条贴底） */
+[data-ui="tavern"] .narrative-col{height:100%;min-height:0;gap:0}
+[data-ui="tavern"] .tavern-panel{height:100%;min-height:0;align-items:stretch}
+[data-ui="tavern"] .tv-side{height:100%;max-height:none;overflow-y:auto}
+[data-ui="tavern"] .tv-main{height:100%;min-height:0}
+[data-ui="tavern"] .tv-stream{flex:1 1 auto;min-height:0;overflow-y:auto}
+[data-ui="tavern"] .tv-inputbar{margin-top:auto}

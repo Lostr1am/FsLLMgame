@@ -17,6 +17,36 @@ ES.tavern = (function () {
   const U = ES.util, D = ES.data;
   const KEY = 'apex-corridor.tavern.v1';
 
+  /* ══════════ 序幕楼层（按时间线，本地生成） ══════════ */
+  function prologueFloor() {
+    const nodeId = (S.scene && S.scene.nodeId) || null;
+    const node = nodeId ? (D.SCENES[nodeId] || null) : null;
+    if (!node) return greeting();
+    const text = [{ t: 'chapter', text: node.chapter.index + ' · ' + node.chapter.name + ' —— ' + node.scene }]
+      .concat(node.lines || [])
+      .map(function (b) {
+        const raw = String(b.text || '').replace(/<[^>]+>/g, '');
+        if (b.t === 'chapter') return '—— ' + raw + ' ——';
+        if (b.t === 'speak') return raw;
+        return raw;
+      }).join('\n\n');
+    const options = (node.choices || []).map(function (c) {
+      return ES.narrative.optionLine ? ES.narrative.optionLine(c) : (c.label || '');
+    });
+    db.floors.push({
+      id: uid('fl'), role: 'assistant', content: text, streaming: false, createdAt: Date.now(),
+      parsed: {
+        thinking: '序幕楼层：来自时间线 ' + (S.timeline ? S.timeline.name : '') + ' 的起始场景，由本地引擎生成。',
+        maintext: text, options: options, sum: '', varsRaw: '{}', varsCommands: { merge: {} }, unknown: {}
+      },
+      options: options,
+      meta: { local: true, prologue: true, model: 'local-engine' }
+    });
+    /* 让 AI 续写时知道序幕内容 */
+    if (ES.narrative.seedHistory) ES.narrative.seedHistory(node);
+    save();
+  }
+
   /* ══════════ 常量（对齐 SKILL 默认值） ══════════ */
   const DEFAULT_TAGS = ['maintext', 'option', 'sum', 'vars', 'thinking', 'think'];
   const DEFAULT_OPAQUE = ['thinking', 'think'];
@@ -398,6 +428,8 @@ ES.tavern = (function () {
   function blankDb() {
     return {
       v: 1,
+      charKey: null,
+      charSessions: {},   /* 按角色隔离的楼层存储（注意：db.sessions 另有用途=分支会话数组） */
       card: {
         name: '联盟主持', creator: '巅峰回廊原型', character_version: '2.3',
         description: '《无畏契约》职业选手人生模拟器的联盟主持：掌管全部设定、数值、随机、裁决与叙事。',
@@ -420,18 +452,56 @@ ES.tavern = (function () {
     };
   }
 
-  function load() {
+  /** 角色身份指纹（存档隔离用） */
+  function sessionKeyOf(state) {
+    const p = (state && state.profile) || {};
+    return [p.name || '?', p.tag || '?', (state && state.createdAt) || 0].join('|');
+  }
+  /** 切到该角色的会话（保留旧角色的楼层） */
+  function useSession(state) {
+    if (!db.charSessions) db.charSessions = {};
+    const key = sessionKeyOf(state);
+    if (db.charKey === key && db.floors) return false;
+    /* 只在别名存在（即当前会话已在内存中）时回写，避免把上一角色的楼层覆盖为空 */
+    if (db.charKey && db.floors) {
+      db.charSessions[db.charKey] = { floors: db.floors, branches: db.branches || [], vars: db.vars || {} };
+    }
+    db.charKey = key;
+    if (!db.charSessions[key] || !db.charSessions[key].floors) db.charSessions[key] = { floors: [], branches: [], vars: {} };
+    const sess = db.charSessions[key];
+    db.floors = sess.floors; db.branches = sess.branches; db.vars = sess.vars;
+    return true;
+  }
+  function load(state) {
     try {
       const raw = localStorage.getItem(KEY);
       db = raw ? JSON.parse(raw) : blankDb();
     } catch (e) { db = blankDb(); }
+    /* 旧版本：楼层直接挂在根上 → 迁移到会话结构 */
+    if (!db.charSessions && db.floors) { db.charSessions = { legacy: { floors: db.floors, branches: db.branches || [], vars: db.vars || {} } }; db.charKey = 'legacy'; }
+    if (!db.charSessions) db.charSessions = {};
+    /* 重建当前会话的别名（保存时只写 charSessions） */
+    if (db.charKey && db.charSessions[db.charKey] && !db.floors) {
+      const cur = db.charSessions[db.charKey];
+      db.floors = cur.floors || []; db.branches = cur.branches || []; db.vars = cur.vars || {};
+    }
     if (!db.books || !db.books.length) seedFromGame();
     if (!db.presets || !db.presets.length) db.presets = [defaultPreset()];
     if (!db.card) db.card = blankDb().card;
+    if (state) useSession(state);
     return db;
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+    try {
+      if (db.charKey && db.charSessions) {
+        db.charSessions[db.charKey] = { floors: db.floors || [], branches: db.branches || [], vars: db.vars || {} };
+        const clone = Object.assign({}, db);
+        delete clone.floors; delete clone.branches; delete clone.vars;
+        localStorage.setItem(KEY, JSON.stringify(clone));
+        return;
+      }
+      localStorage.setItem(KEY, JSON.stringify(db));
+    } catch (e) {}
   }
 
   /* 从游戏数据自动生成四本世界书（条目即设定库） */
@@ -1758,8 +1828,10 @@ ES.tavern = (function () {
   /* ══════════ 对外 API ══════════ */
   return {
     mount: function (state) {
-      S = state; load();
-      if (!db.floors.length) greeting();
+      S = state;
+      load(state);
+      /* 新档：先播放本时间线的序幕（本地生成，离线可用） */
+      if (!db.floors.length) prologueFloor();
       try { buildContext('（会话开始）'); } catch (e) {}
       renderAll();
     },

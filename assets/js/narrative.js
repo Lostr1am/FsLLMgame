@@ -565,6 +565,12 @@ ES.narrative = (function () {
     el.setAttribute('data-tone', aiOn() ? 'gold' : 'cyan');
   }
   function resetAiSession() { aiHistory = []; aiPendingFact = null; }
+  /** 把序幕写进 AI 历史（酒馆层播完序幕后调用，避免 AI 重复开场） */
+  function seedHistory(node) {
+    if (!node) return;
+    const text = (node.lines || []).map(function (l) { return (l.who ? l.who + '：' : '') + String(l.text || '').replace(/<[^>]+>/g, ''); }).join('\n');
+    aiHistory = [{ role: 'assistant', content: '<maintext>' + text + '</maintext>' }];
+  }
 
   /* ── 职业面板（注入提示词 + 回合末尾快照，对应截图里的「职业面板」） ── */
   function panelLines(s) {
@@ -1062,7 +1068,7 @@ ES.narrative = (function () {
     const withChapter = [{ t: 'chapter', text: node.chapter.index + ' · ' + node.chapter.name + ' —— ' + node.scene }].concat(node.lines);
     setGen('生成场景中', true);
     return appendBlocks(withChapter).then(function () {
-      if (aiOn()) {
+      if (aiOn() && !(ES.tavern && ES.tavern.uiMode === 'tavern')) {
         /* AI 模式：把开场情境交给模型，由它续写并给出选项 */
         aiHistory.push({ role: 'assistant', content: '<maintext>' + node.lines.map(function (l) { return (l.who ? l.who + '：' : '') + String(l.text || '').replace(/<[^>]+>/g, ''); }).join('\n') + '</maintext>' });
         return aiTurn(null, { opening: true });
@@ -1077,7 +1083,8 @@ ES.narrative = (function () {
   /* ══════════ 随机事件（无剧情节点时的推演） ══════════ */
   /* ══════════ 上首发剧情（选项按当前首发动态生成） ══════════ */
   function promotionReady() {
-    const L = S.club && S.club.lineup;
+    if (!S || !S.club) return false;
+    const L = S.club.lineup;
     return !!(L && L.selfStatus === 'bench');
   }
   function promotionScene(forced, resumeNode) {
@@ -1553,7 +1560,7 @@ ES.narrative = (function () {
     setGen: setGen, get current() { return current; }, finishCareer: finishCareer,
     currentChoices: function () { return current ? (current.choices || []) : []; },
     aiOn: aiOn, aiTurn: aiTurn, engineName: engineName, refreshEngineTag: refreshEngineTag,
-    resetAiSession: resetAiSession, setChoices: setChoices, parseOptionLine: parseOptionLine, optionLine: optionLine,
+    resetAiSession: resetAiSession, seedHistory: seedHistory, setChoices: setChoices, parseOptionLine: parseOptionLine, optionLine: optionLine,
     buildStateDigest: buildStateDigest, buildWorldContext: buildWorldContext,
     promotionReady: promotionReady, promotionScene: promotionScene,
     busyNow: function () { return !!busy; },
