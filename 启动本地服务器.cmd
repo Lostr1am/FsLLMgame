@@ -2,6 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 title 巅峰回廊 APEX CORRIDOR - 本地启动
+set PORT=8788
 
 echo ============================================
 echo   巅峰回廊 APEX CORRIDOR - 本地启动
@@ -32,10 +33,10 @@ exit /b
 
 :serve
 echo 使用命令：%PYCMD%
-echo 正在启动本地服务器 http://localhost:8080 ...
+echo 正在启动本地服务器 http://localhost:%PORT% ...
 echo 会另开一个窗口跑服务器，关闭那个窗口即停止；本窗口可直接关闭。
 echo.
-start "APEX 本地服务器 (关闭此窗口=停止)" cmd /c "%PYCMD% -m http.server 8080 & echo. & echo 服务器已停止，按任意键关闭。 & pause"
+start "APEX 本地服务器 (关闭此窗口=停止)" cmd /c "%PYCMD% -m http.server %PORT% & echo. & echo 服务器已停止，按任意键关闭。 & pause"
 timeout /t 2 >nul
-start "" http://localhost:8080
+start "" http://localhost:%PORT%
 exit /b
