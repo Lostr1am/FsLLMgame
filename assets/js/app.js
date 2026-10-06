@@ -719,6 +719,32 @@ ES.app = (function () {
               setTimeout(function () { ES.tavern.chooseOption(2); }, 5000);
               break;
             }
+            case 'measure': {
+              setTimeout(function () {
+                const q = function (sel) {
+                  const el = document.querySelector(sel);
+                  if (!el) return sel + ' = (无)' ;
+                  const r = el.getBoundingClientRect();
+                  return sel + ' = ' + Math.round(r.height) + 'px (top ' + Math.round(r.top) + ', bottom ' + Math.round(r.bottom) + ') scroll=' + el.scrollHeight;
+                };
+                const lines = [
+                  'window = ' + window.innerHeight + 'px',
+                  q('#screen-main'), q('.hud-grid'), q('.narrative-col'), q('#tavern-panel'),
+                  q('.tv-side'), q('.tv-main'), q('.tv-stream'), q('.tv-inputbar'), q('#dashboard'), q('#status-rail'),
+                  'tavern-panel display = ' + getComputedStyle(document.querySelector('#tavern-panel')).display,
+                  'narrative-col display = ' + getComputedStyle(document.querySelector('.narrative-col')).display,
+                  'narrative-col height = ' + getComputedStyle(document.querySelector('.narrative-col')).height,
+                  'hud-grid align = ' + getComputedStyle(document.querySelector('.hud-grid')).alignItems,
+                  'screen-main display = ' + getComputedStyle(document.querySelector('#screen-main')).display
+                ];
+                const pre = document.createElement('pre');
+                pre.id = 'measure-out';
+                pre.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#000;color:#0f0;font:12px monospace;padding:8px;white-space:pre';
+                pre.textContent = lines.join('\n');
+                document.body.appendChild(pre);
+              }, 1200);
+              break;
+            }
             case 'matchday': {
               const nm0 = ES.state.nextMatch(S);
               if (nm0 && nm0.inDays > 0) ES.state.advanceTime(S, nm0.inDays);
